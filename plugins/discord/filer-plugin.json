@@ -1,0 +1,59 @@
+{
+  "name": "discord",
+  "displayName": "Discord Integration",
+  "version": "0.1.0",
+  "description": "Send messages via Discord webhooks",
+  "author": { "name": "iyulab", "url": "https://github.com/iyulab" },
+  "repository": "https://github.com/iyulab/filer-official-plugins",
+  "icon": "./assets/icon.svg",
+  "license": "MIT",
+  "keywords": ["discord", "messaging", "notification", "webhook"],
+  "runtime": "node",
+  "engines": { "filer": ">=0.2.0" },
+  "bundled": true,
+
+  "contributes": {
+    "settings": {
+      "discord.webhookUrl": {
+        "type": "string",
+        "title": "Webhook URL",
+        "description": "Discord webhook URL (from channel settings > Integrations > Webhooks)",
+        "secret": true,
+        "required": true,
+        "order": 1
+      },
+      "discord.username": {
+        "type": "string",
+        "title": "Bot Username",
+        "description": "Display name for webhook messages (optional)",
+        "default": "Filer",
+        "order": 2
+      },
+      "discord.notifyOnAgentComplete": {
+        "type": "boolean",
+        "title": "Notify on agent completion",
+        "default": false,
+        "order": 3
+      }
+    },
+    "tools": [
+      {
+        "id": "send_discord_message",
+        "title": "Send Discord Message",
+        "description": "Send a text message to a Discord channel via webhook",
+        "schema": "./tools/send-message.schema.json",
+        "handler": "./tools/send-message.js"
+      },
+      {
+        "id": "send_discord_embed",
+        "title": "Send Discord Embed",
+        "description": "Send a rich embed message to Discord via webhook",
+        "schema": "./tools/send-embed.schema.json",
+        "handler": "./tools/send-embed.js"
+      }
+    ],
+    "hooks": {
+      "onAgentComplete": "./hooks/notify-complete.js"
+    }
+  }
+}

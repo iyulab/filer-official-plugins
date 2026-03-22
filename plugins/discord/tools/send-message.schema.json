@@ -1,0 +1,14 @@
+{
+  "type": "object",
+  "properties": {
+    "content": {
+      "type": "string",
+      "description": "Message content (supports Discord markdown)"
+    },
+    "webhookUrl": {
+      "type": "string",
+      "description": "Override webhook URL. Uses default if omitted."
+    }
+  },
+  "required": ["content"]
+}

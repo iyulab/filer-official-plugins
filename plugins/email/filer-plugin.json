@@ -1,0 +1,88 @@
+{
+  "name": "email",
+  "displayName": "Email Integration",
+  "version": "0.1.0",
+  "description": "Send emails via SMTP or API providers",
+  "author": { "name": "iyulab", "url": "https://github.com/iyulab" },
+  "repository": "https://github.com/iyulab/filer-official-plugins",
+  "icon": "./assets/icon.svg",
+  "license": "MIT",
+  "keywords": ["email", "smtp", "notification"],
+  "runtime": "node",
+  "engines": { "filer": ">=0.2.0" },
+  "bundled": true,
+
+  "contributes": {
+    "settings": {
+      "email.provider": {
+        "type": "string",
+        "title": "Provider",
+        "description": "Email sending method",
+        "enum": ["smtp", "resend"],
+        "default": "smtp",
+        "order": 1
+      },
+      "email.smtpHost": {
+        "type": "string",
+        "title": "SMTP Host",
+        "description": "SMTP server hostname (e.g. smtp.gmail.com)",
+        "order": 2
+      },
+      "email.smtpPort": {
+        "type": "number",
+        "title": "SMTP Port",
+        "default": 587,
+        "order": 3
+      },
+      "email.smtpUser": {
+        "type": "string",
+        "title": "SMTP Username",
+        "order": 4
+      },
+      "email.smtpPassword": {
+        "type": "string",
+        "title": "SMTP Password",
+        "secret": true,
+        "order": 5
+      },
+      "email.resendApiKey": {
+        "type": "string",
+        "title": "Resend API Key",
+        "description": "API key from resend.com",
+        "secret": true,
+        "order": 6
+      },
+      "email.fromAddress": {
+        "type": "string",
+        "title": "From Address",
+        "description": "Sender email address",
+        "required": true,
+        "order": 7
+      },
+      "email.defaultTo": {
+        "type": "string",
+        "title": "Default Recipient",
+        "description": "Default recipient email address",
+        "order": 8
+      },
+      "email.notifyOnAgentComplete": {
+        "type": "boolean",
+        "title": "Notify on agent completion",
+        "default": false,
+        "order": 9
+      }
+    },
+    "tools": [
+      {
+        "id": "send_email",
+        "title": "Send Email",
+        "description": "Send an email message",
+        "schema": "./tools/send-email.schema.json",
+        "handler": "./tools/send-email.js"
+      }
+    ],
+    "hooks": {
+      "onAgentComplete": "./hooks/notify-complete.js"
+    }
+  }
+}

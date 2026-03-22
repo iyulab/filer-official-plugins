@@ -1,0 +1,26 @@
+{
+  "type": "composite",
+  "layout": "vertical",
+  "children": [
+    {
+      "type": "stats-row",
+      "items": [
+        { "label": "Sent Today", "value": "{{stats.sentToday}}", "icon": "send" },
+        { "label": "Failed", "value": "{{stats.failed}}", "icon": "alert-circle", "color": "error" }
+      ]
+    },
+    {
+      "type": "table",
+      "id": "history",
+      "dataSource": "telegram.messageHistory",
+      "columns": [
+        { "key": "timestamp", "title": "Time", "format": "relative-time" },
+        { "key": "chat", "title": "Chat" },
+        { "key": "message", "title": "Message", "truncate": 60 },
+        { "key": "status", "title": "Status", "type": "badge" }
+      ],
+      "pagination": { "pageSize": 20 },
+      "emptyMessage": "No messages sent yet. Configure your bot token and chat ID to get started."
+    }
+  ]
+}

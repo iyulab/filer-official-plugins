@@ -1,0 +1,86 @@
+{
+  "name": "telegram",
+  "displayName": "Telegram Integration",
+  "version": "0.1.0",
+  "description": "Send messages and files via Telegram Bot API",
+  "author": { "name": "iyulab", "url": "https://github.com/iyulab" },
+  "repository": "https://github.com/iyulab/filer-official-plugins",
+  "icon": "./assets/icon.svg",
+  "license": "MIT",
+  "keywords": ["telegram", "messaging", "notification"],
+  "runtime": "node",
+  "engines": { "filer": ">=0.2.0" },
+  "bundled": true,
+
+  "contributes": {
+    "settings": {
+      "telegram.botToken": {
+        "type": "string",
+        "title": "Bot Token",
+        "description": "Telegram Bot API token from @BotFather",
+        "secret": true,
+        "required": true,
+        "order": 1
+      },
+      "telegram.defaultChatId": {
+        "type": "string",
+        "title": "Default Chat ID",
+        "description": "Default chat/group ID for sending messages",
+        "order": 2
+      },
+      "telegram.notifyOnAgentComplete": {
+        "type": "boolean",
+        "title": "Notify on agent completion",
+        "description": "Send a Telegram message when an AI agent completes a task",
+        "default": false,
+        "order": 3
+      },
+      "telegram.messageFormat": {
+        "type": "string",
+        "title": "Message format",
+        "enum": ["plain", "Markdown", "HTML"],
+        "default": "Markdown",
+        "order": 4
+      }
+    },
+    "tools": [
+      {
+        "id": "send_telegram_message",
+        "title": "Send Telegram Message",
+        "description": "Send a text message to a Telegram chat via bot",
+        "schema": "./tools/send-message.schema.json",
+        "handler": "./tools/send-message.js"
+      },
+      {
+        "id": "send_telegram_file",
+        "title": "Send File via Telegram",
+        "description": "Send a file with optional caption to a Telegram chat",
+        "schema": "./tools/send-file.schema.json",
+        "handler": "./tools/send-file.js"
+      }
+    ],
+    "commands": [
+      {
+        "id": "telegram.sendFile",
+        "title": "Send via Telegram",
+        "icon": "send",
+        "contexts": ["file-context-menu", "selection-context-menu"],
+        "handler": "./commands/send-file.js",
+        "when": "fileSelected"
+      }
+    ],
+    "views": [
+      {
+        "id": "telegram.history",
+        "title": "Telegram",
+        "icon": "./assets/icon.svg",
+        "location": "extensions-tab",
+        "definition": "./views/history.view.json"
+      }
+    ],
+    "hooks": {
+      "onAppReady": "./hooks/initialize.js",
+      "onAgentComplete": "./hooks/notify-complete.js"
+    }
+  }
+}

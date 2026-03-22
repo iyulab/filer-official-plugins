@@ -1,0 +1,14 @@
+{
+  "type": "object",
+  "properties": {
+    "message": {
+      "type": "string",
+      "description": "Message text to send"
+    },
+    "chatId": {
+      "type": "string",
+      "description": "Target chat ID. Uses default if omitted."
+    }
+  },
+  "required": ["message"]
+}

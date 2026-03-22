@@ -1,0 +1,26 @@
+{
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Embed title"
+    },
+    "description": {
+      "type": "string",
+      "description": "Embed description (supports Discord markdown)"
+    },
+    "color": {
+      "type": "number",
+      "description": "Embed color as decimal (e.g. 3447003 for blue). Default: blue."
+    },
+    "fields": {
+      "type": "array",
+      "description": "Embed fields array: [{ name, value, inline? }]"
+    },
+    "webhookUrl": {
+      "type": "string",
+      "description": "Override webhook URL. Uses default if omitted."
+    }
+  },
+  "required": ["title"]
+}

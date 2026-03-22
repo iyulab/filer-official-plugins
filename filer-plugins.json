@@ -1,0 +1,30 @@
+{
+  "name": "filer-official-plugins",
+  "displayName": "Filer Official Plugins",
+  "owner": { "name": "iyulab", "url": "https://github.com/iyulab" },
+  "version": "0.1.0",
+
+  "plugins": [
+    {
+      "name": "telegram",
+      "source": "./plugins/telegram",
+      "description": "Send messages and files via Telegram Bot API",
+      "version": "0.1.0",
+      "tags": ["messaging", "notification"]
+    },
+    {
+      "name": "discord",
+      "source": "./plugins/discord",
+      "description": "Send messages via Discord webhooks",
+      "version": "0.1.0",
+      "tags": ["messaging", "notification"]
+    },
+    {
+      "name": "email",
+      "source": "./plugins/email",
+      "description": "Send emails via SMTP or API providers",
+      "version": "0.1.0",
+      "tags": ["email", "notification"]
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "type": "object",
+  "properties": {
+    "filePath": {
+      "type": "string",
+      "description": "Absolute path to the file to send"
+    },
+    "caption": {
+      "type": "string",
+      "description": "Optional caption for the file"
+    },
+    "chatId": {
+      "type": "string",
+      "description": "Target chat ID. Uses default if omitted."
+    }
+  },
+  "required": ["filePath"]
+}

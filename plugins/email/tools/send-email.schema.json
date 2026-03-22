@@ -1,0 +1,22 @@
+{
+  "type": "object",
+  "properties": {
+    "to": {
+      "type": "string",
+      "description": "Recipient email address. Uses default if omitted."
+    },
+    "subject": {
+      "type": "string",
+      "description": "Email subject line"
+    },
+    "body": {
+      "type": "string",
+      "description": "Email body (plain text)"
+    },
+    "html": {
+      "type": "string",
+      "description": "Email body (HTML). If provided, used instead of body."
+    }
+  },
+  "required": ["subject", "body"]
+}
