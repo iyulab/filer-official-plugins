@@ -1,0 +1,57 @@
+{
+  "name": "slack",
+  "displayName": "Slack Integration",
+  "version": "0.1.0",
+  "description": "Send messages to Slack channels via Incoming Webhooks",
+  "author": { "name": "iyulab", "url": "https://github.com/iyulab" },
+  "repository": "https://github.com/iyulab/filer-official-plugins",
+  "license": "MIT",
+  "keywords": ["slack", "messaging", "notification"],
+  "runtime": "node",
+  "engines": { "filer": ">=0.2.0" },
+  "bundled": true,
+
+  "contributes": {
+    "settings": {
+      "slack.webhookUrl": {
+        "type": "string",
+        "title": "Webhook URL",
+        "description": "Slack Incoming Webhook URL",
+        "secret": true,
+        "required": true,
+        "order": 1
+      },
+      "slack.defaultChannel": {
+        "type": "string",
+        "title": "Default Channel",
+        "description": "Default channel name (overrides webhook default)",
+        "order": 2
+      },
+      "slack.notifyOnAgentComplete": {
+        "type": "boolean",
+        "title": "Notify on agent completion",
+        "description": "Send a Slack message when an AI agent completes a task",
+        "default": false,
+        "order": 3
+      }
+    },
+    "tools": [
+      {
+        "name": "slack_send_message",
+        "description": "Send a message to a Slack channel via webhook",
+        "handler": "./tools/send-message.js",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "text": { "type": "string", "description": "Message text (supports Slack mrkdwn)" },
+            "channel": { "type": "string", "description": "Channel override (optional)" }
+          },
+          "required": ["text"]
+        }
+      }
+    ],
+    "hooks": {
+      "onAgentExecutionCompleted": "./hooks/on-execution-completed.js"
+    }
+  }
+}

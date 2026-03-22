@@ -1,0 +1,61 @@
+{
+  "name": "notion",
+  "displayName": "Notion Integration",
+  "version": "0.1.0",
+  "description": "Create pages and append content to Notion databases",
+  "author": { "name": "iyulab", "url": "https://github.com/iyulab" },
+  "repository": "https://github.com/iyulab/filer-official-plugins",
+  "license": "MIT",
+  "keywords": ["notion", "documentation", "knowledge-base"],
+  "runtime": "node",
+  "engines": { "filer": ">=0.2.0" },
+  "bundled": true,
+
+  "contributes": {
+    "settings": {
+      "notion.apiKey": {
+        "type": "string",
+        "title": "API Key",
+        "description": "Notion Internal Integration Token",
+        "secret": true,
+        "required": true,
+        "order": 1
+      },
+      "notion.defaultDatabaseId": {
+        "type": "string",
+        "title": "Default Database ID",
+        "description": "Notion database ID for creating new pages",
+        "order": 2
+      }
+    },
+    "tools": [
+      {
+        "name": "notion_create_page",
+        "description": "Create a new page in a Notion database",
+        "handler": "./tools/create-page.js",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "title": { "type": "string", "description": "Page title" },
+            "content": { "type": "string", "description": "Page content (plain text, converted to paragraph blocks)" },
+            "databaseId": { "type": "string", "description": "Database ID (uses default if not specified)" }
+          },
+          "required": ["title"]
+        }
+      },
+      {
+        "name": "notion_append_block",
+        "description": "Append content to an existing Notion page",
+        "handler": "./tools/append-block.js",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "pageId": { "type": "string", "description": "Notion page ID" },
+            "content": { "type": "string", "description": "Content to append as paragraph blocks" }
+          },
+          "required": ["pageId", "content"]
+        }
+      }
+    ]
+  }
+}

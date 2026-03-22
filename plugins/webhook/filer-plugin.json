@@ -1,0 +1,65 @@
+{
+  "name": "webhook",
+  "displayName": "Webhook Integration",
+  "version": "0.1.0",
+  "description": "Send HTTP webhooks to any URL on agent events",
+  "author": { "name": "iyulab", "url": "https://github.com/iyulab" },
+  "repository": "https://github.com/iyulab/filer-official-plugins",
+  "license": "MIT",
+  "keywords": ["webhook", "http", "notification", "integration"],
+  "runtime": "node",
+  "engines": { "filer": ">=0.2.0" },
+  "bundled": true,
+
+  "contributes": {
+    "settings": {
+      "webhook.url": {
+        "type": "string",
+        "title": "Webhook URL",
+        "description": "Target URL for webhook POST requests",
+        "required": true,
+        "order": 1
+      },
+      "webhook.secret": {
+        "type": "string",
+        "title": "Secret",
+        "description": "Shared secret for HMAC-SHA256 signature (X-Webhook-Signature header)",
+        "secret": true,
+        "order": 2
+      },
+      "webhook.notifyOnAgentComplete": {
+        "type": "boolean",
+        "title": "Notify on agent completion",
+        "description": "Send webhook when an AI agent completes a task",
+        "default": false,
+        "order": 3
+      },
+      "webhook.notifyOnFileChange": {
+        "type": "boolean",
+        "title": "Notify on file changes",
+        "description": "Send webhook when watched files change",
+        "default": false,
+        "order": 4
+      }
+    },
+    "tools": [
+      {
+        "name": "webhook_send",
+        "description": "Send a custom webhook POST request to the configured URL",
+        "handler": "./tools/send.js",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "event": { "type": "string", "description": "Event name/type" },
+            "payload": { "type": "object", "description": "JSON payload to send" }
+          },
+          "required": ["event"]
+        }
+      }
+    ],
+    "hooks": {
+      "onAgentExecutionCompleted": "./hooks/on-execution-completed.js",
+      "onFileChanged": "./hooks/on-file-changed.js"
+    }
+  }
+}
