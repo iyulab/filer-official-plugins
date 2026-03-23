@@ -11,7 +11,7 @@
     },
     "chatId": {
       "type": "string",
-      "description": "Target chat ID. Uses default if omitted."
+      "description": "Optional. Target chat ID. Leave empty to use the pre-configured default chat ID."
     }
   },
   "required": ["filePath"]

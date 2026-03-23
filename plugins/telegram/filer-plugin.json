@@ -14,6 +14,12 @@
 
   "contributes": {
     "settings": {
+      "telegram.setup": {
+        "type": "info",
+        "title": "Setup Guide",
+        "description": "1. Open Telegram and search for @BotFather\n2. Send /newbot and follow the prompts to create a bot\n3. Copy the Bot Token and paste it below\n4. Open your new bot in Telegram and send /start\n5. Click \"Fetch Chat ID\" to auto-detect your chat\n6. Click \"Send Test Message\" to verify the connection",
+        "order": 0
+      },
       "telegram.botToken": {
         "type": "string",
         "title": "Bot Token",
@@ -22,39 +28,55 @@
         "required": true,
         "order": 1
       },
+      "telegram.fetchChatId": {
+        "type": "action",
+        "title": "Fetch Chat ID",
+        "description": "Send /start to your bot first, then click to auto-detect",
+        "handler": "./actions/fetch-chat-id.js",
+        "variant": "secondary",
+        "order": 2
+      },
       "telegram.defaultChatId": {
         "type": "string",
         "title": "Default Chat ID",
         "description": "Default chat/group ID for sending messages",
-        "order": 2
+        "order": 3
+      },
+      "telegram.testMessage": {
+        "type": "action",
+        "title": "Send Test Message",
+        "description": "Send a hello message to verify your connection",
+        "handler": "./actions/test-hello.js",
+        "variant": "primary",
+        "order": 4
       },
       "telegram.notifyOnAgentComplete": {
         "type": "boolean",
         "title": "Notify on agent completion",
         "description": "Send a Telegram message when an AI agent completes a task",
         "default": false,
-        "order": 3
+        "order": 5
       },
       "telegram.messageFormat": {
         "type": "string",
         "title": "Message format",
         "enum": ["plain", "Markdown", "HTML"],
         "default": "Markdown",
-        "order": 4
+        "order": 6
       }
     },
     "tools": [
       {
         "id": "send_telegram_message",
         "title": "Send Telegram Message",
-        "description": "Send a text message to a Telegram chat via bot",
+        "description": "Send a text message to a Telegram chat. Chat ID is pre-configured — just provide the message.",
         "schema": "./tools/send-message.schema.json",
         "handler": "./tools/send-message.js"
       },
       {
         "id": "send_telegram_file",
         "title": "Send File via Telegram",
-        "description": "Send a file with optional caption to a Telegram chat",
+        "description": "Send a file with optional caption to a Telegram chat. Chat ID is pre-configured.",
         "schema": "./tools/send-file.schema.json",
         "handler": "./tools/send-file.js"
       }
