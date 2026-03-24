@@ -1,5 +1,17 @@
 export default async function(params, ctx) {
-  const webhookUrl = await ctx.settings.get('slack.webhookUrl');
+  // Resolve webhookUrl: channel integration > global default
+  let webhookUrl = null;
+  try {
+    const session = await ctx.session.getActive();
+    if (session) {
+      const channelId = session.channelId;
+      if (channelId && channelId !== 'default') {
+        const config = await ctx.channels.getIntegrationConfig(channelId, 'slack');
+        if (config?.webhookUrl) webhookUrl = config.webhookUrl;
+      }
+    }
+  } catch { /* fall through to global */ }
+  if (!webhookUrl) webhookUrl = await ctx.settings.get('slack.webhookUrl');
   if (!webhookUrl) throw new Error('Slack Webhook URL not configured. Set it in Settings > Extensions.');
 
   const payload = { text: params.text };

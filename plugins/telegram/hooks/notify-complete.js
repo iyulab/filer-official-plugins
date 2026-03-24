@@ -3,8 +3,18 @@ export default async function(event, ctx) {
   if (!enabled) return;
 
   const token = await ctx.settings.get('telegram.botToken');
-  const chatId = await ctx.settings.get('telegram.defaultChatId');
-  if (!token || !chatId) return;
+  if (!token) return;
+
+  // Resolve chatId: channel integration > global default
+  let chatId = null;
+  if (event.channelId && event.channelId !== 'default') {
+    try {
+      const config = await ctx.channels.getIntegrationConfig(event.channelId, 'telegram');
+      if (config?.chatId) chatId = config.chatId;
+    } catch { /* fall through to global */ }
+  }
+  if (!chatId) chatId = await ctx.settings.get('telegram.defaultChatId');
+  if (!chatId) return;
 
   const duration = event.duration ? `${Math.round(event.duration / 1000)}s` : 'unknown';
   const summary = event.result?.summary || 'Task completed';

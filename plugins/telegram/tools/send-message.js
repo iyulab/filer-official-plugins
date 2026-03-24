@@ -2,7 +2,22 @@ export default async function(params, ctx) {
   const token = await ctx.settings.get('telegram.botToken');
   if (!token) throw new Error('Telegram Bot Token not configured. Set it in Settings > Extensions.');
 
-  const chatId = params.chatId || await ctx.settings.get('telegram.defaultChatId');
+  // Resolve chatId: explicit param > channel integration > global default
+  let chatId = params.chatId || null;
+  if (!chatId) {
+    try {
+      const session = await ctx.session.getActive();
+      if (session) {
+        // session object may carry channelId from the session store
+        const channelId = session.channelId;
+        if (channelId && channelId !== 'default') {
+          const config = await ctx.channels.getIntegrationConfig(channelId, 'telegram');
+          if (config?.chatId) chatId = config.chatId;
+        }
+      }
+    } catch { /* fall through to global */ }
+  }
+  if (!chatId) chatId = await ctx.settings.get('telegram.defaultChatId');
   if (!chatId) throw new Error('No chat ID provided and no default configured.');
 
   const format = await ctx.settings.get('telegram.messageFormat') || 'Markdown';

@@ -2,7 +2,15 @@ export default async function(event, ctx) {
   const enabled = await ctx.settings.get('discord.notifyOnAgentComplete');
   if (!enabled) return;
 
-  const webhookUrl = await ctx.settings.get('discord.webhookUrl');
+  // Resolve webhookUrl: channel integration > global default
+  let webhookUrl = null;
+  if (event.channelId && event.channelId !== 'default') {
+    try {
+      const config = await ctx.channels.getIntegrationConfig(event.channelId, 'discord');
+      if (config?.webhookUrl) webhookUrl = config.webhookUrl;
+    } catch { /* fall through to global */ }
+  }
+  if (!webhookUrl) webhookUrl = await ctx.settings.get('discord.webhookUrl');
   if (!webhookUrl) return;
 
   const username = await ctx.settings.get('discord.username') || 'Filer';
