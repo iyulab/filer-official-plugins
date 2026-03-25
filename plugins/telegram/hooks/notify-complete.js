@@ -1,36 +1,27 @@
-export default async function(event, ctx) {
-  const enabled = await ctx.settings.get('telegram.notifyOnAgentComplete');
-  if (!enabled) return;
+const { sendWithTopicRetry } = require('../lib/telegram-api');
 
-  const token = await ctx.settings.get('telegram.botToken');
-  if (!token) return;
+module.exports = async function onAgentComplete(event, ctx) {
+  if (!(await ctx.settings.get('telegram.notifyOnAgentComplete'))) return;
 
-  // Resolve chatId: channel integration > global default
-  let chatId = null;
-  if (event.channelId && event.channelId !== 'default') {
-    try {
-      const config = await ctx.channels.getIntegrationConfig(event.channelId, 'telegram');
-      if (config?.chatId) chatId = config.chatId;
-    } catch { /* fall through to global */ }
-  }
-  if (!chatId) chatId = await ctx.settings.get('telegram.defaultChatId');
+  const botToken = await ctx.settings.get('telegram.botToken');
+  if (!botToken) return;
+
+  const chatId = await ctx.settings.get('telegram.defaultChatId');
   if (!chatId) return;
 
-  const duration = event.duration ? `${Math.round(event.duration / 1000)}s` : 'unknown';
-  const summary = event.result?.summary || 'Task completed';
-  const message = `🤖 *Agent Complete*\n\nDuration: ${duration}\nResult: ${summary}`;
+  const channelId = event.channelId || 'default';
+  const duration = event.result?.durationMs
+    ? `${(event.result.durationMs / 1000).toFixed(1)}s`
+    : 'unknown';
+  const summary = event.result?.summary || 'No summary available';
+  const text = `✅ Agent completed (${duration})\n\n${summary}`;
+
+  const payload = { chat_id: chatId, text, parse_mode: 'Markdown' };
 
   try {
-    const res = await ctx.fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chat_id: chatId, text: message, parse_mode: 'Markdown' }),
-    });
-
-    if (res.ok) {
-      ctx.toast({ type: 'info', message: 'Agent result sent to Telegram' });
-    }
-  } catch (err) {
-    ctx.log.error('Failed to send agent completion notification:', err.message);
+    await sendWithTopicRetry(ctx, botToken, chatId, channelId, 'sendMessage', payload);
+    ctx.toast({ type: 'info', message: 'Agent result sent to Telegram' });
+  } catch (e) {
+    console.warn('[telegram] notify-complete failed:', e.message);
   }
-}
+};
