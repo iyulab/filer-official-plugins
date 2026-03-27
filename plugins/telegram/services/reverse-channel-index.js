@@ -11,7 +11,7 @@ let defaultChatId = null;
  * Build the reverse index by scanning all channels.
  * @param {object} ctx - PluginContext
  */
-export async function build(ctx) {
+async function build(ctx) {
   index.clear();
   defaultChatId = (await ctx.settings.get('telegram.defaultChatId')) || null;
 
@@ -36,7 +36,7 @@ export async function build(ctx) {
  * @param {number|string|undefined} topicId
  * @returns {string|null}
  */
-export function resolve(chatId, topicId) {
+function resolve(chatId, topicId) {
   if (topicId) {
     const key = `${chatId}:${topicId}`;
     const channelId = index.get(key);
@@ -55,6 +55,8 @@ export function resolve(chatId, topicId) {
  * Invalidate and rebuild the index.
  * @param {object} ctx - PluginContext
  */
-export async function invalidate(ctx) {
+async function invalidate(ctx) {
   await build(ctx);
 }
+
+module.exports = { build, resolve, invalidate };
