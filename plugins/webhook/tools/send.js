@@ -22,8 +22,34 @@ export default async function(params, ctx) {
 
   if (!res.ok) {
     const text = await res.text();
+
+    // Track failure
+    const failStats = (await ctx.store.get('stats')) || { sent: 0, failed: 0 };
+    failStats.failed++;
+    await ctx.store.set('stats', failStats);
+    ctx.viewData.set('webhook.stats', failStats);
+
     throw new Error(`Webhook failed (${res.status}): ${text}`);
   }
 
-  return { success: true, statusCode: res.status };
+  const statusCode = res.status;
+
+  // Track history
+  const history = (await ctx.store.get('messageHistory')) || [];
+  history.unshift({
+    timestamp: Date.now(),
+    url,
+    statusCode,
+    status: 'sent',
+  });
+  if (history.length > 100) history.length = 100;
+  await ctx.store.set('messageHistory', history);
+  ctx.viewData.set('webhook.messageHistory', history);
+
+  const stats = (await ctx.store.get('stats')) || { sent: 0, failed: 0 };
+  stats.sent++;
+  await ctx.store.set('stats', stats);
+  ctx.viewData.set('webhook.stats', stats);
+
+  return { success: true, statusCode };
 }

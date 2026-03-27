@@ -1,0 +1,26 @@
+{
+  "type": "composite",
+  "layout": "vertical",
+  "children": [
+    {
+      "type": "stats-row",
+      "items": [
+        { "label": "Sent", "value": "{{email.stats.sent}}", "icon": "mail" },
+        { "label": "Failed", "value": "{{email.stats.failed}}", "icon": "alert-circle", "color": "error" }
+      ]
+    },
+    {
+      "type": "table",
+      "id": "history",
+      "dataSource": "email.messageHistory",
+      "columns": [
+        { "key": "timestamp", "title": "Time", "format": "relative-time" },
+        { "key": "to", "title": "To" },
+        { "key": "subject", "title": "Subject", "truncate": 60 },
+        { "key": "status", "title": "Status", "type": "badge" }
+      ],
+      "pagination": { "pageSize": 20 },
+      "emptyMessage": "No emails sent yet."
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "type": "composite",
+  "layout": "vertical",
+  "children": [
+    {
+      "type": "stats-row",
+      "items": [
+        { "label": "Sent", "value": "{{webhook.stats.sent}}", "icon": "send" },
+        { "label": "Failed", "value": "{{webhook.stats.failed}}", "icon": "alert-circle", "color": "error" }
+      ]
+    },
+    {
+      "type": "table",
+      "id": "history",
+      "dataSource": "webhook.messageHistory",
+      "columns": [
+        { "key": "timestamp", "title": "Time", "format": "relative-time" },
+        { "key": "url", "title": "URL", "truncate": 40 },
+        { "key": "statusCode", "title": "Code" },
+        { "key": "status", "title": "Status", "type": "badge" }
+      ],
+      "pagination": { "pageSize": 20 },
+      "emptyMessage": "No webhooks sent yet."
+    }
+  ]
+}
