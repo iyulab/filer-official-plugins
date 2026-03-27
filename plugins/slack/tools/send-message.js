@@ -25,8 +25,32 @@ export default async function(params, ctx) {
 
   if (!res.ok) {
     const body = await res.text();
+
+    // Track failure
+    const failStats = (await ctx.store.get('stats')) || { sent: 0, failed: 0 };
+    failStats.failed++;
+    await ctx.store.set('stats', failStats);
+    ctx.viewData.set('slack.stats', failStats);
+
     throw new Error(`Slack webhook failed (${res.status}): ${body}`);
   }
+
+  // Track history
+  const history = (await ctx.store.get('messageHistory')) || [];
+  history.unshift({
+    timestamp: Date.now(),
+    channel: params.channel || 'default',
+    message: (params.text || '').substring(0, 100),
+    status: 'sent',
+  });
+  if (history.length > 100) history.length = 100;
+  await ctx.store.set('messageHistory', history);
+  ctx.viewData.set('slack.messageHistory', history);
+
+  const stats = (await ctx.store.get('stats')) || { sent: 0, failed: 0 };
+  stats.sent++;
+  await ctx.store.set('stats', stats);
+  ctx.viewData.set('slack.stats', stats);
 
   return { success: true, message: `Message sent to Slack` };
 }

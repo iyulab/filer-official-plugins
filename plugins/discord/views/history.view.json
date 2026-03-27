@@ -1,0 +1,26 @@
+{
+  "type": "composite",
+  "layout": "vertical",
+  "children": [
+    {
+      "type": "stats-row",
+      "items": [
+        { "label": "Sent", "value": "{{discord.stats.sent}}", "icon": "send" },
+        { "label": "Failed", "value": "{{discord.stats.failed}}", "icon": "alert-circle", "color": "error" }
+      ]
+    },
+    {
+      "type": "table",
+      "id": "history",
+      "dataSource": "discord.messageHistory",
+      "columns": [
+        { "key": "timestamp", "title": "Time", "format": "relative-time" },
+        { "key": "server", "title": "Server" },
+        { "key": "message", "title": "Message", "truncate": 60 },
+        { "key": "status", "title": "Status", "type": "badge" }
+      ],
+      "pagination": { "pageSize": 20 },
+      "emptyMessage": "No messages sent yet."
+    }
+  ]
+}
