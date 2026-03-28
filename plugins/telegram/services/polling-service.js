@@ -158,15 +158,25 @@ async function handleCallbackQuery(ctx, botToken, callbackQuery) {
   if (!data?.startsWith('hitl:')) return;
 
   const parts = data.split(':');
-  if (parts.length < 4) return;
+  if (parts.length < 3) return;
 
-  const [, action, agentId, requestId] = parts;
-  const approved = action === 'approve';
+  // Format: "hitl:a:<shortKey>" or "hitl:d:<shortKey>"
+  const [, actionCode, shortKey] = parts;
+  const mapping = await ctx.store.get(`hitl:${shortKey}`);
+  if (!mapping?.agentId || !mapping?.requestId) {
+    ctx.log.warn('HITL callback mapping not found for key:', shortKey);
+    return;
+  }
+
+  const approved = actionCode === 'a';
   const reason = approved ? 'Approved via Telegram' : 'Denied via Telegram';
+
+  // Clean up stored mapping
+  await ctx.store.delete(`hitl:${shortKey}`);
 
   try {
     const hostUrl = process.env.FILER_HOST_URL || 'http://localhost:5100';
-    await ctx.fetch(`${hostUrl}/api/agents/${agentId}/hitl/${requestId}`, {
+    await ctx.fetch(`${hostUrl}/api/agents/${mapping.agentId}/hitl/${mapping.requestId}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ approved, reason }),

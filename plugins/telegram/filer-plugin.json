@@ -11,6 +11,24 @@
   "runtime": "node",
   "engines": { "filer": ">=0.2.0" },
   "bundled": true,
+  "permissions": {
+    "fs": {
+      "read": {
+        "parameter": true,
+        "deny": ["**/.env", "**/.env.*", "**/.ssh/**", "**/*.pem"]
+      }
+    },
+    "fetch": {
+      "static": ["api.telegram.org"]
+    },
+    "store": true,
+    "settings": true,
+    "session": { "getActive": true },
+    "channels": { "getIntegrationConfig": true },
+    "toast": true,
+    "log": true,
+    "execution": { "timeout": "30s" }
+  },
 
   "contributes": {
     "settings": {
@@ -63,6 +81,11 @@
         "enum": ["plain", "Markdown", "HTML"],
         "default": "Markdown",
         "order": 6
+      },
+      "telegram.enablePolling": {
+        "type": "boolean",
+        "default": false,
+        "description": "Enable inbound message polling from Telegram"
       }
     },
     "tools": [
@@ -102,7 +125,11 @@
     ],
     "hooks": {
       "onAppReady": "./hooks/initialize.js",
-      "onAgentComplete": "./hooks/notify-complete.js"
+      "onAgentComplete": "./hooks/notify-complete.js",
+      "onFileChangeNotify": "./hooks/on-file-change-notify.js",
+      "onSessionMessage": "./hooks/on-session-message.js",
+      "onAgentHitlRequest": "./hooks/on-agent-hitl.js",
+      "onChannelChanged": "./hooks/on-channel-changed.js"
     }
   }
 }

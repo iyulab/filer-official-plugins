@@ -3,6 +3,7 @@
   "properties": {
     "filePath": {
       "type": "string",
+      "format": "file-path",
       "description": "Absolute path to the file to send"
     },
     "caption": {

@@ -13,14 +13,22 @@ module.exports = async function onAgentHitl(event, ctx) {
     event.description ? `Description: ${event.description}` : null,
   ].filter(Boolean).join('\n');
 
+  // Telegram callback_data is limited to 64 bytes.
+  // Store full IDs in plugin store and use a short key in callback_data.
+  const shortKey = Date.now().toString(36);
+  await ctx.store.set(`hitl:${shortKey}`, {
+    agentId: event.agentId,
+    requestId: event.requestId,
+  });
+
   const payload = {
     chat_id: chatId,
     text,
     parse_mode: 'Markdown',
     reply_markup: JSON.stringify({
       inline_keyboard: [[
-        { text: '✅ Approve', callback_data: `hitl:approve:${event.agentId}:${event.requestId}` },
-        { text: '❌ Deny', callback_data: `hitl:deny:${event.agentId}:${event.requestId}` },
+        { text: '✅ Approve', callback_data: `hitl:a:${shortKey}` },
+        { text: '❌ Deny', callback_data: `hitl:d:${shortKey}` },
       ]],
     }),
   };
