@@ -10,6 +10,17 @@
   "runtime": "node",
   "engines": { "filer": ">=0.2.0" },
   "bundled": true,
+  "permissions": {
+    "fetch": {
+      "settings": ["slack.webhookUrl"]
+    },
+    "settings": true,
+    "channels": { "getIntegrationConfig": true },
+    "toast": true,
+    "log": true,
+    "store": true,
+    "execution": { "timeout": "30s" }
+  },
 
   "contributes": {
     "settings": {
@@ -52,6 +63,14 @@
     ],
     "hooks": {
       "onAgentExecutionCompleted": "./hooks/on-execution-completed.js"
-    }
+    },
+    "views": [
+      {
+        "id": "slack.history",
+        "title": "Slack",
+        "location": "extensions-tab",
+        "definition": "./views/history.view.json"
+      }
+    ]
   }
 }

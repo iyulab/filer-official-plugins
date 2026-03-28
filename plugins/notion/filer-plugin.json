@@ -10,8 +10,26 @@
   "runtime": "node",
   "engines": { "filer": ">=0.2.0" },
   "bundled": true,
+  "permissions": {
+    "fetch": {
+      "static": ["api.notion.com"]
+    },
+    "settings": true,
+    "channels": { "getIntegrationConfig": true },
+    "toast": true,
+    "log": true,
+    "store": true,
+    "execution": { "timeout": "30s" }
+  },
 
   "contributes": {
+    "views": [
+      {
+        "id": "notion.history",
+        "title": "History",
+        "definition": "./views/history.view.json"
+      }
+    ],
     "settings": {
       "notion.apiKey": {
         "type": "string",

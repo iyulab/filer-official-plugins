@@ -1,4 +1,6 @@
-export default async function(event, ctx) {
+const pollingService = require('../services/polling-service');
+
+module.exports = async function(event, ctx) {
   // Load message history into viewData on startup
   const history = (await ctx.store.get('messageHistory')) || [];
   ctx.viewData.set('telegram.messageHistory', history);
@@ -13,5 +15,15 @@ export default async function(event, ctx) {
   };
   ctx.viewData.set('stats', stats);
 
+  // Start polling if enabled
+  const enablePolling = await ctx.settings.get('telegram.enablePolling');
+  if (enablePolling) {
+    try {
+      await pollingService.start(ctx);
+    } catch (err) {
+      ctx.log.error('Failed to start Telegram polling:', err.message);
+    }
+  }
+
   ctx.log.info('Telegram plugin initialized');
-}
+};

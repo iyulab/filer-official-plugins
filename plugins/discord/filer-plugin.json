@@ -11,6 +11,17 @@
   "runtime": "node",
   "engines": { "filer": ">=0.2.0" },
   "bundled": true,
+  "permissions": {
+    "fetch": {
+      "settings": ["discord.webhookUrl"]
+    },
+    "settings": true,
+    "channels": { "getIntegrationConfig": true },
+    "toast": true,
+    "log": true,
+    "store": true,
+    "execution": { "timeout": "30s" }
+  },
 
   "contributes": {
     "settings": {
@@ -54,6 +65,14 @@
     ],
     "hooks": {
       "onAgentComplete": "./hooks/notify-complete.js"
-    }
+    },
+    "views": [
+      {
+        "id": "discord.history",
+        "title": "Discord",
+        "location": "extensions-tab",
+        "definition": "./views/history.view.json"
+      }
+    ]
   }
 }

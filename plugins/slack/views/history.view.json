@@ -1,0 +1,26 @@
+{
+  "type": "composite",
+  "layout": "vertical",
+  "children": [
+    {
+      "type": "stats-row",
+      "items": [
+        { "label": "Sent", "value": "{{slack.stats.sent}}", "icon": "send" },
+        { "label": "Failed", "value": "{{slack.stats.failed}}", "icon": "alert-circle", "color": "error" }
+      ]
+    },
+    {
+      "type": "table",
+      "id": "history",
+      "dataSource": "slack.messageHistory",
+      "columns": [
+        { "key": "timestamp", "title": "Time", "format": "relative-time" },
+        { "key": "channel", "title": "Channel" },
+        { "key": "message", "title": "Message", "truncate": 60 },
+        { "key": "status", "title": "Status", "type": "badge" }
+      ],
+      "pagination": { "pageSize": 20 },
+      "emptyMessage": "No messages sent yet."
+    }
+  ]
+}

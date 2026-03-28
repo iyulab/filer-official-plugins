@@ -29,8 +29,32 @@ export default async function(params, ctx) {
 
   if (!res.ok) {
     const text = await res.text();
+
+    // Track failure
+    const failStats = (await ctx.store.get('stats')) || { sent: 0, failed: 0 };
+    failStats.failed++;
+    await ctx.store.set('stats', failStats);
+    ctx.viewData.set('discord.stats', failStats);
+
     throw new Error(`Discord webhook error (${res.status}): ${text}`);
   }
+
+  // Track history
+  const history = (await ctx.store.get('messageHistory')) || [];
+  history.unshift({
+    timestamp: Date.now(),
+    server: params.server || 'default',
+    message: (params.content || '').substring(0, 100),
+    status: 'sent',
+  });
+  if (history.length > 100) history.length = 100;
+  await ctx.store.set('messageHistory', history);
+  ctx.viewData.set('discord.messageHistory', history);
+
+  const stats = (await ctx.store.get('stats')) || { sent: 0, failed: 0 };
+  stats.sent++;
+  await ctx.store.set('stats', stats);
+  ctx.viewData.set('discord.stats', stats);
 
   ctx.log.info('Discord message sent');
   return { success: true };

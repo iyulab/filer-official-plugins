@@ -1,0 +1,26 @@
+{
+  "type": "composite",
+  "layout": "vertical",
+  "children": [
+    {
+      "type": "stats-row",
+      "items": [
+        { "label": "Created", "value": "{{notion.stats.sent}}", "icon": "file-plus" },
+        { "label": "Failed", "value": "{{notion.stats.failed}}", "icon": "alert-circle", "color": "error" }
+      ]
+    },
+    {
+      "type": "table",
+      "id": "history",
+      "dataSource": "notion.messageHistory",
+      "columns": [
+        { "key": "timestamp", "title": "Time", "format": "relative-time" },
+        { "key": "database", "title": "Database" },
+        { "key": "title", "title": "Title", "truncate": 60 },
+        { "key": "status", "title": "Status", "type": "badge" }
+      ],
+      "pagination": { "pageSize": 20 },
+      "emptyMessage": "No pages created yet."
+    }
+  ]
+}

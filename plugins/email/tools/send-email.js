@@ -6,11 +6,40 @@ export default async function(params, ctx) {
   const to = params.to || await ctx.settings.get('email.defaultTo');
   if (!to) throw new Error('No recipient specified and no default configured.');
 
-  if (provider === 'resend') {
-    return await sendViaResend(params, to, fromAddress, ctx);
-  } else {
-    return await sendViaSmtp(params, to, fromAddress, ctx);
+  let result;
+  try {
+    if (provider === 'resend') {
+      result = await sendViaResend(params, to, fromAddress, ctx);
+    } else {
+      result = await sendViaSmtp(params, to, fromAddress, ctx);
+    }
+  } catch (err) {
+    // Track failure
+    const failStats = (await ctx.store.get('stats')) || { sent: 0, failed: 0 };
+    failStats.failed++;
+    await ctx.store.set('stats', failStats);
+    ctx.viewData.set('email.stats', failStats);
+    throw err;
   }
+
+  // Track history
+  const history = (await ctx.store.get('messageHistory')) || [];
+  history.unshift({
+    timestamp: Date.now(),
+    to,
+    subject: params.subject,
+    status: 'sent',
+  });
+  if (history.length > 100) history.length = 100;
+  await ctx.store.set('messageHistory', history);
+  ctx.viewData.set('email.messageHistory', history);
+
+  const stats = (await ctx.store.get('stats')) || { sent: 0, failed: 0 };
+  stats.sent++;
+  await ctx.store.set('stats', stats);
+  ctx.viewData.set('email.stats', stats);
+
+  return result;
 }
 
 async function sendViaResend(params, to, from, ctx) {
