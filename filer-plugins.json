@@ -2,7 +2,7 @@
   "name": "filer-official-plugins",
   "displayName": "Filer Official Plugins",
   "owner": { "name": "iyulab", "url": "https://github.com/iyulab" },
-  "version": "0.1.0",
+  "version": "0.2.0",
 
   "plugins": [
     {
@@ -10,6 +10,7 @@
       "source": "./plugins/telegram",
       "description": "Send messages and files via Telegram Bot API",
       "version": "0.1.0",
+      "category": "messaging",
       "tags": ["messaging", "notification"]
     },
     {
@@ -17,14 +18,40 @@
       "source": "./plugins/discord",
       "description": "Send messages via Discord webhooks",
       "version": "0.1.0",
+      "category": "messaging",
       "tags": ["messaging", "notification"]
+    },
+    {
+      "name": "slack",
+      "source": "./plugins/slack",
+      "description": "Send messages to Slack channels via Incoming Webhooks",
+      "version": "0.1.0",
+      "category": "messaging",
+      "tags": ["slack", "messaging", "notification"]
     },
     {
       "name": "email",
       "source": "./plugins/email",
       "description": "Send emails via SMTP or API providers",
       "version": "0.1.0",
+      "category": "messaging",
       "tags": ["email", "notification"]
+    },
+    {
+      "name": "notion",
+      "source": "./plugins/notion",
+      "description": "Create pages and append content to Notion databases",
+      "version": "0.1.0",
+      "category": "productivity",
+      "tags": ["notion", "documentation", "knowledge-base"]
+    },
+    {
+      "name": "webhook",
+      "source": "./plugins/webhook",
+      "description": "Send HTTP webhooks to any URL on agent events",
+      "version": "0.1.0",
+      "category": "automation",
+      "tags": ["webhook", "http", "notification", "integration"]
     }
   ]
 }
