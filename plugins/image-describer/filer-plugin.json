@@ -1,0 +1,35 @@
+{
+  "name": "image-describer",
+  "displayName": "Image Describer",
+  "version": "0.1.0",
+  "description": "Describe image content and extract text from images using AI vision",
+  "author": { "name": "iyulab", "url": "https://github.com/iyulab" },
+  "repository": "https://github.com/iyulab/filer-official-plugins",
+  "license": "MIT",
+  "keywords": ["image", "ocr", "description", "png", "jpg", "visual"],
+  "category": "media",
+  "runtime": "node",
+  "engines": { "filer": ">=0.2.0" },
+  "bundled": false,
+  "permissions": {},
+  "contributes": {
+    "actions": [
+      {
+        "id": "describe-image",
+        "title": "Describe Image",
+        "description": "Generate a detailed description of the image content",
+        "scope": "single-file",
+        "fileTypes": ["image"],
+        "prompt": "./prompts/describe-image.md"
+      },
+      {
+        "id": "extract-text",
+        "title": "Extract Text (OCR)",
+        "description": "Extract all text visible in the image",
+        "scope": "single-file",
+        "fileTypes": ["image"],
+        "prompt": "./prompts/extract-text.md"
+      }
+    ]
+  }
+}

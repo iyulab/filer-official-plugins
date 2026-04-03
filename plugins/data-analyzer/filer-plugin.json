@@ -1,0 +1,60 @@
+{
+  "name": "data-analyzer",
+  "displayName": "Data Analyzer",
+  "version": "0.1.0",
+  "description": "Analyze CSV, JSON, and Excel data files: statistics, schema analysis, querying, and merging",
+  "author": { "name": "iyulab", "url": "https://github.com/iyulab" },
+  "repository": "https://github.com/iyulab/filer-official-plugins",
+  "license": "MIT",
+  "keywords": ["data", "csv", "json", "excel", "analytics", "schema"],
+  "category": "data",
+  "runtime": "node",
+  "engines": { "filer": ">=0.2.0" },
+  "bundled": false,
+  "permissions": {},
+  "contributes": {
+    "actions": [
+      {
+        "id": "analyze-data",
+        "title": "Analyze Data",
+        "description": "Perform comprehensive statistical analysis of the data file",
+        "scope": "single-file",
+        "fileTypes": ["data"],
+        "prompt": "./prompts/analyze-data.md"
+      },
+      {
+        "id": "query-data",
+        "title": "Query Data",
+        "description": "Ask a question about the data and get an answer",
+        "scope": "single-file",
+        "fileTypes": ["data"],
+        "prompt": "./prompts/query-data.md",
+        "params": [
+          {
+            "id": "question",
+            "label": "Question",
+            "type": "text",
+            "placeholder": "e.g. What is the average sales by region?",
+            "required": true
+          }
+        ]
+      },
+      {
+        "id": "analyze-schema",
+        "title": "Analyze Schema",
+        "description": "Analyze the data structure, field types, and relationships",
+        "scope": "single-file",
+        "fileTypes": ["data"],
+        "prompt": "./prompts/analyze-schema.md"
+      },
+      {
+        "id": "merge-data",
+        "title": "Merge Data",
+        "description": "Analyze how the selected data files can be merged or joined",
+        "scope": "multi-file",
+        "fileTypes": ["data"],
+        "prompt": "./prompts/merge-data.md"
+      }
+    ]
+  }
+}

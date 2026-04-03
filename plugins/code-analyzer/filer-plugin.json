@@ -1,0 +1,79 @@
+{
+  "name": "code-analyzer",
+  "displayName": "Code Analyzer",
+  "version": "0.1.0",
+  "description": "AI-powered code review: explain, find bugs, suggest refactoring, and generate tests and documentation",
+  "author": { "name": "iyulab", "url": "https://github.com/iyulab" },
+  "repository": "https://github.com/iyulab/filer-official-plugins",
+  "license": "MIT",
+  "keywords": ["code", "review", "bugs", "refactor", "tests", "docs"],
+  "category": "code",
+  "runtime": "node",
+  "engines": { "filer": ">=0.2.0" },
+  "bundled": false,
+  "permissions": {},
+  "contributes": {
+    "actions": [
+      {
+        "id": "explain-code",
+        "title": "Explain Code",
+        "description": "Explain what the code does for the target audience",
+        "scope": "single-file",
+        "fileTypes": ["code"],
+        "prompt": "./prompts/explain-code.md",
+        "params": [
+          {
+            "id": "audience",
+            "label": "Target Audience",
+            "type": "select",
+            "options": [
+              { "value": "Beginner", "label": "Beginner" },
+              { "value": "Expert", "label": "Expert" }
+            ],
+            "default": "Beginner"
+          }
+        ]
+      },
+      {
+        "id": "find-bugs",
+        "title": "Find Bugs",
+        "description": "Identify potential bugs, errors, and security vulnerabilities in the code",
+        "scope": "single-file",
+        "fileTypes": ["code"],
+        "prompt": "./prompts/find-bugs.md"
+      },
+      {
+        "id": "suggest-refactor",
+        "title": "Suggest Refactoring",
+        "description": "Suggest code improvements, refactoring opportunities, and best practices",
+        "scope": "single-file",
+        "fileTypes": ["code"],
+        "prompt": "./prompts/suggest-refactor.md"
+      },
+      {
+        "id": "generate-tests",
+        "title": "Generate Tests",
+        "description": "Generate unit tests for the code",
+        "scope": "single-file",
+        "fileTypes": ["code"],
+        "prompt": "./prompts/generate-tests.md"
+      },
+      {
+        "id": "generate-docs",
+        "title": "Generate Documentation",
+        "description": "Generate inline documentation and comments for the code",
+        "scope": "single-file",
+        "fileTypes": ["code"],
+        "prompt": "./prompts/generate-docs.md"
+      },
+      {
+        "id": "analyze-dependencies",
+        "title": "Analyze Dependencies",
+        "description": "Analyze dependencies and relationships across the selected code files",
+        "scope": "multi-file",
+        "fileTypes": ["code"],
+        "prompt": "./prompts/analyze-dependencies.md"
+      }
+    ]
+  }
+}

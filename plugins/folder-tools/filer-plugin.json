@@ -1,0 +1,47 @@
+{
+  "name": "folder-tools",
+  "displayName": "Folder Tools",
+  "version": "0.1.0",
+  "description": "Analyze folder structure, generate README and index files, and suggest better organization",
+  "author": { "name": "iyulab", "url": "https://github.com/iyulab" },
+  "repository": "https://github.com/iyulab/filer-official-plugins",
+  "license": "MIT",
+  "keywords": ["folder", "structure", "readme", "index", "organization"],
+  "category": "productivity",
+  "runtime": "node",
+  "engines": { "filer": ">=0.2.0" },
+  "bundled": false,
+  "permissions": {},
+  "contributes": {
+    "actions": [
+      {
+        "id": "overview",
+        "title": "Folder Overview",
+        "description": "Summarize the contents and purpose of the folder",
+        "scope": "folder",
+        "prompt": "./prompts/overview.md"
+      },
+      {
+        "id": "suggest-structure",
+        "title": "Suggest Structure",
+        "description": "Analyze and suggest a better folder organization",
+        "scope": "folder",
+        "prompt": "./prompts/suggest-structure.md"
+      },
+      {
+        "id": "generate-readme",
+        "title": "Generate README",
+        "description": "Generate a README.md file for the folder",
+        "scope": "folder",
+        "prompt": "./prompts/generate-readme.md"
+      },
+      {
+        "id": "generate-index",
+        "title": "Generate Index",
+        "description": "Generate an index of all files in the folder with descriptions",
+        "scope": "folder",
+        "prompt": "./prompts/generate-index.md"
+      }
+    ]
+  }
+}

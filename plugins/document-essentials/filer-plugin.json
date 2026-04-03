@@ -1,0 +1,153 @@
+{
+  "name": "document-essentials",
+  "displayName": "Document Essentials",
+  "version": "0.1.0",
+  "description": "AI-powered document analysis: summarize, explain, translate, rewrite, and extract insights from documents",
+  "author": { "name": "iyulab", "url": "https://github.com/iyulab" },
+  "repository": "https://github.com/iyulab/filer-official-plugins",
+  "license": "MIT",
+  "keywords": ["summary", "explain", "translate", "rewrite", "text", "pdf", "docx", "md", "document"],
+  "category": "document",
+  "runtime": "node",
+  "engines": { "filer": ">=0.2.0" },
+  "bundled": false,
+  "permissions": {},
+  "contributes": {
+    "actions": [
+      {
+        "id": "summarize",
+        "title": "Summarize",
+        "description": "Generate a summary of the document",
+        "scope": "single-file",
+        "fileTypes": ["document"],
+        "prompt": "./prompts/summarize.md",
+        "params": [
+          {
+            "id": "length",
+            "label": "Summary Length",
+            "type": "select",
+            "options": [
+              { "value": "Brief", "label": "Brief" },
+              { "value": "Detailed", "label": "Detailed" }
+            ],
+            "default": "Brief"
+          }
+        ]
+      },
+      {
+        "id": "explain",
+        "title": "Explain",
+        "description": "Explain the document content for the target audience",
+        "scope": "single-file",
+        "fileTypes": ["document"],
+        "prompt": "./prompts/explain.md",
+        "params": [
+          {
+            "id": "audience",
+            "label": "Target Audience",
+            "type": "select",
+            "options": [
+              { "value": "Beginner", "label": "Beginner" },
+              { "value": "Expert", "label": "Expert" }
+            ],
+            "default": "Beginner"
+          }
+        ]
+      },
+      {
+        "id": "translate",
+        "title": "Translate",
+        "description": "Translate the document into another language",
+        "scope": "single-file",
+        "fileTypes": ["document"],
+        "prompt": "./prompts/translate.md",
+        "params": [
+          {
+            "id": "language",
+            "label": "Target Language",
+            "type": "select",
+            "options": [
+              { "value": "Korean", "label": "Korean" },
+              { "value": "English", "label": "English" },
+              { "value": "Japanese", "label": "Japanese" },
+              { "value": "Chinese", "label": "Chinese" },
+              { "value": "Spanish", "label": "Spanish" },
+              { "value": "French", "label": "French" },
+              { "value": "German", "label": "German" }
+            ],
+            "default": "English"
+          }
+        ]
+      },
+      {
+        "id": "rewrite",
+        "title": "Rewrite",
+        "description": "Rewrite the document in a different style",
+        "scope": "single-file",
+        "fileTypes": ["document"],
+        "prompt": "./prompts/rewrite.md",
+        "params": [
+          {
+            "id": "style",
+            "label": "Writing Style",
+            "type": "select",
+            "options": [
+              { "value": "Formal", "label": "Formal" },
+              { "value": "Casual", "label": "Casual" },
+              { "value": "Concise", "label": "Concise" },
+              { "value": "Technical", "label": "Technical" },
+              { "value": "Creative", "label": "Creative" }
+            ],
+            "default": "Formal"
+          }
+        ]
+      },
+      {
+        "id": "extract-keywords",
+        "title": "Extract Keywords",
+        "description": "Extract the most important keywords and topics from the file",
+        "scope": "single-file",
+        "prompt": "./prompts/extract-keywords.md"
+      },
+      {
+        "id": "suggest-filename",
+        "title": "Suggest Filename",
+        "description": "Suggest a descriptive filename based on the file content",
+        "scope": "single-file",
+        "prompt": "./prompts/suggest-filename.md"
+      },
+      {
+        "id": "qa",
+        "title": "Q&A",
+        "description": "Answer questions about the document interactively",
+        "scope": "single-file",
+        "fileTypes": ["document"],
+        "prompt": "./prompts/qa.md"
+      },
+      {
+        "id": "proofread",
+        "title": "Proofread",
+        "description": "Check spelling, grammar, and style issues in the document",
+        "scope": "single-file",
+        "fileTypes": ["document"],
+        "prompt": "./prompts/proofread.md"
+      },
+      {
+        "id": "extract-action-items",
+        "title": "Extract Action Items",
+        "description": "Identify and list all action items, tasks, and to-dos from the document",
+        "scope": "single-file",
+        "fileTypes": ["document"],
+        "prompt": "./prompts/extract-action-items.md"
+      },
+      {
+        "id": "generate-toc",
+        "title": "Generate Table of Contents",
+        "description": "Generate a structured table of contents for the document",
+        "scope": "single-file",
+        "fileTypes": ["document"],
+        "prompt": "./prompts/generate-toc.md"
+      }
+    ]
+  }
+}

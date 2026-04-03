@@ -52,6 +52,54 @@
       "version": "0.1.0",
       "category": "automation",
       "tags": ["webhook", "http", "notification", "integration"]
+    },
+    {
+      "name": "document-essentials",
+      "source": "./plugins/document-essentials",
+      "description": "AI-powered document analysis: summarize, explain, translate, rewrite, and extract insights from documents",
+      "version": "0.1.0",
+      "category": "document",
+      "tags": ["summary", "explain", "translate", "rewrite", "text", "pdf", "docx", "md", "document"]
+    },
+    {
+      "name": "multi-file-tools",
+      "source": "./plugins/multi-file-tools",
+      "description": "Compare, summarize, and manage multiple files at once",
+      "version": "0.1.0",
+      "category": "document",
+      "tags": ["compare", "diff", "duplicates", "multi-file"]
+    },
+    {
+      "name": "folder-tools",
+      "source": "./plugins/folder-tools",
+      "description": "Analyze folder structure, generate README and index files, and suggest better organization",
+      "version": "0.1.0",
+      "category": "productivity",
+      "tags": ["folder", "structure", "readme", "index", "organization"]
+    },
+    {
+      "name": "code-analyzer",
+      "source": "./plugins/code-analyzer",
+      "description": "AI-powered code review: explain, find bugs, suggest refactoring, and generate tests and documentation",
+      "version": "0.1.0",
+      "category": "code",
+      "tags": ["code", "review", "bugs", "refactor", "tests", "docs"]
+    },
+    {
+      "name": "data-analyzer",
+      "source": "./plugins/data-analyzer",
+      "description": "Analyze CSV, JSON, and Excel data files: statistics, schema analysis, querying, and merging",
+      "version": "0.1.0",
+      "category": "data",
+      "tags": ["data", "csv", "json", "excel", "analytics", "schema"]
+    },
+    {
+      "name": "image-describer",
+      "source": "./plugins/image-describer",
+      "description": "Describe image content and extract text from images using AI vision",
+      "version": "0.1.0",
+      "category": "media",
+      "tags": ["image", "ocr", "description", "png", "jpg", "visual"]
     }
   ]
 }

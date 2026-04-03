@@ -1,0 +1,47 @@
+{
+  "name": "multi-file-tools",
+  "displayName": "Multi-File Tools",
+  "version": "0.1.0",
+  "description": "Compare, summarize, and manage multiple files at once",
+  "author": { "name": "iyulab", "url": "https://github.com/iyulab" },
+  "repository": "https://github.com/iyulab/filer-official-plugins",
+  "license": "MIT",
+  "keywords": ["compare", "diff", "duplicates", "multi-file"],
+  "category": "document",
+  "runtime": "node",
+  "engines": { "filer": ">=0.2.0" },
+  "bundled": false,
+  "permissions": {},
+  "contributes": {
+    "actions": [
+      {
+        "id": "compare",
+        "title": "Compare Files",
+        "description": "Compare the selected files and highlight differences",
+        "scope": "multi-file",
+        "prompt": "./prompts/compare.md"
+      },
+      {
+        "id": "summarize-all",
+        "title": "Summarize All",
+        "description": "Generate a summary for each selected file",
+        "scope": "multi-file",
+        "prompt": "./prompts/summarize-all.md"
+      },
+      {
+        "id": "find-duplicates",
+        "title": "Find Duplicates",
+        "description": "Detect duplicate or near-duplicate content across the selected files or folder",
+        "scope": ["multi-file", "folder"],
+        "prompt": "./prompts/find-duplicates.md"
+      },
+      {
+        "id": "suggest-filenames",
+        "title": "Suggest Filenames",
+        "description": "Suggest better filenames for each selected file based on their content",
+        "scope": "multi-file",
+        "prompt": "./prompts/suggest-filenames.md"
+      }
+    ]
+  }
+}
