@@ -70,7 +70,7 @@
       {
         "id": "discord.history",
         "title": "Discord",
-        "location": "extensions-tab",
+        "location": "plugins-tab",
         "definition": "./views/history.view.json"
       }
     ]

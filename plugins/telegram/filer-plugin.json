@@ -119,7 +119,7 @@
         "id": "telegram.history",
         "title": "Telegram",
         "icon": "./assets/icon.svg",
-        "location": "extensions-tab",
+        "location": "plugins-tab",
         "definition": "./views/history.view.json"
       }
     ],

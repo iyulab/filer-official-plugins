@@ -68,7 +68,7 @@
       {
         "id": "slack.history",
         "title": "Slack",
-        "location": "extensions-tab",
+        "location": "plugins-tab",
         "definition": "./views/history.view.json"
       }
     ]
