@@ -168,6 +168,46 @@ Users can invoke plugin commands from chat:
 /my-plugin.my-command some arguments
 ```
 
+## Inbound Triggers (Channel-Reactive)
+
+Plugins that receive messages from external services (Telegram, Slack, etc.)
+forward them to the host via `POST /api/triggers/inbound`:
+
+```js
+export default async function startPolling(ctx) {
+  // ... receive message from external service ...
+
+  const messageId = `${pluginSlug}-${nativeId}`;
+
+  await ctx.fetch(`${hostUrl}/api/triggers/inbound`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      channel_id: channelId,
+      source_plugin: pluginSlug,
+      message_id: messageId,
+      content: messageText,
+    }),
+  });
+}
+```
+
+### message_id Convention
+
+The `message_id` field **must** follow the format `<plugin>-<native_id>`:
+
+| Plugin | Native ID source | Example |
+|--------|-----------------|---------|
+| telegram | `update.update_id` | `telegram-928374` |
+| slack | `event.ts` | `slack-1712345678.001200` |
+| discord | `message.id` | `discord-1234567890` |
+| email | message `Message-ID` header | `email-abc123@mail.example.com` |
+
+This convention ensures global uniqueness across plugins and enables
+deduplication and tracing through the pipeline.
+
+**Reference implementation:** `plugins/telegram/services/polling-service.js`
+
 ## Development
 
 1. Create your plugin in `plugins/your-plugin/`
