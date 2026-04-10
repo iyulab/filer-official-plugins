@@ -122,28 +122,77 @@ async function handleUpdate(ctx, botToken, update) {
 
   ctx.log.info(`Inbound message for channel=${channelId}: "${text.substring(0, 50)}..."`);
 
+  // CR-1 (Sprint 42): route through the unified /api/triggers/inbound
+  // endpoint so the host can tag the agent run with
+  // PipelineEventOrigin.Inbound and flow it through the same trigger
+  // model as file events. Falls back to the legacy
+  // /api/sessions → /chat path if the new endpoint returns 404
+  // (older host versions) to keep the plugin backward-compatible
+  // during rollout.
+  const hostUrl = process.env.FILER_HOST_URL || 'http://localhost:5100';
+  const messageId = `telegram-${update.update_id}`;
+
   try {
-    const hostUrl = process.env.FILER_HOST_URL || 'http://localhost:5100';
-    const sessResp = await ctx.fetch(`${hostUrl}/api/sessions`, {
+    const resp = await ctx.fetch(`${hostUrl}/api/triggers/inbound`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ channel_id: channelId }),
-    }).then(r => r.json());
+      body: JSON.stringify({
+        channel_id: channelId,
+        source_plugin: 'telegram',
+        message_id: messageId,
+        content: text,
+      }),
+    });
 
-    const sessionId = sessResp.session_id || sessResp.id;
-    if (!sessionId) {
-      ctx.log.error('Failed to create session for inbound message');
+    if (resp.status === 202) {
+      return; // Accepted, host will dispatch the agent run.
+    }
+
+    if (resp.status === 404) {
+      // Older host without /api/triggers/inbound — fall back to
+      // the legacy path. Logged once per update for observability.
+      ctx.log.warn('Host does not support /api/triggers/inbound — using legacy session path');
+      await routeViaLegacySessionPath(ctx, hostUrl, channelId, text);
       return;
     }
 
-    await ctx.fetch(`${hostUrl}/api/sessions/${sessionId}/chat`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ content: text }),
-    });
+    // Other non-202 statuses: 400 (bad request), 409 (agent not
+    // active), etc. Log and drop — the plugin cannot correct these
+    // autonomously.
+    const body = await resp.text().catch(() => '');
+    ctx.log.warn(`Inbound trigger rejected (${resp.status}): ${body}`);
   } catch (err) {
     ctx.log.error('Failed to route inbound message:', err.message);
   }
+}
+
+/**
+ * Legacy fallback: create a session for the channel and send the
+ * message as a chat request. Used only when the host does not
+ * expose /api/triggers/inbound (older versions before CR-1).
+ * @param {object} ctx - PluginContext
+ * @param {string} hostUrl - Host base URL
+ * @param {string} channelId - Resolved Filer channel id
+ * @param {string} text - Message content
+ */
+async function routeViaLegacySessionPath(ctx, hostUrl, channelId, text) {
+  const sessResp = await ctx.fetch(`${hostUrl}/api/sessions`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ channel_id: channelId }),
+  }).then(r => r.json());
+
+  const sessionId = sessResp.session_id || sessResp.id;
+  if (!sessionId) {
+    ctx.log.error('Failed to create session for inbound message (legacy path)');
+    return;
+  }
+
+  await ctx.fetch(`${hostUrl}/api/sessions/${sessionId}/chat`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ content: text }),
+  });
 }
 
 /**
