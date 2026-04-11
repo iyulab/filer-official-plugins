@@ -10,6 +10,7 @@
   "runtime": "node",
   "engines": { "filer": ">=0.2.0" },
   "bundled": true,
+  "capabilities": ["note-append"],
   "permissions": {
     "fetch": {
       "static": ["api.notion.com"]

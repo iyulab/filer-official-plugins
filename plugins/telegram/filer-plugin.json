@@ -11,6 +11,7 @@
   "runtime": "node",
   "engines": { "filer": ">=0.2.0" },
   "bundled": true,
+  "capabilities": ["messenger", "inbound-channel"],
   "permissions": {
     "fs": {
       "read": {
