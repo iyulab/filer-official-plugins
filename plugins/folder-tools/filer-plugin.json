@@ -12,8 +12,24 @@
   "engines": { "filer": ">=0.2.0" },
   "bundled": false,
   "capabilities": ["manage-folders"],
-  "permissions": {},
+  "permissions": {
+    "fs": {
+      "read": {
+        "parameter": true,
+        "deny": ["**/.env", "**/.env.*", "**/.ssh/**", "**/*.pem", "**/*.key"]
+      }
+    }
+  },
   "contributes": {
+    "tools": [
+      {
+        "id": "list_folder",
+        "title": "List Folder Contents",
+        "description": "List the contents of a folder (non-recursive). Returns all files and subfolders. Optionally filter by file extension. Useful for understanding what's in a folder before deciding which files to process.",
+        "schema": "./tools/list-folder.schema.json",
+        "handler": "./tools/list-folder.js"
+      }
+    ],
     "actions": [
       {
         "id": "overview",

@@ -12,8 +12,24 @@
   "engines": { "filer": ">=0.2.0" },
   "bundled": false,
   "capabilities": ["describe-image"],
-  "permissions": {},
+  "permissions": {
+    "fs": {
+      "read": {
+        "parameter": true,
+        "deny": ["**/.env", "**/.env.*", "**/.ssh/**", "**/*.pem", "**/*.key"]
+      }
+    }
+  },
   "contributes": {
+    "tools": [
+      {
+        "id": "get_image_data",
+        "title": "Get Image Data",
+        "description": "Read an image file and return its metadata (file name, MIME type, size, dimensions for PNG/JPEG). Set includeBase64=true to get base64-encoded image data for multimodal vision model input.",
+        "schema": "./tools/get-image-data.schema.json",
+        "handler": "./tools/get-image-data.js"
+      }
+    ],
     "actions": [
       {
         "id": "describe-image",

@@ -12,8 +12,24 @@
   "engines": { "filer": ">=0.2.0" },
   "bundled": false,
   "capabilities": ["batch-file-ops"],
-  "permissions": {},
+  "permissions": {
+    "fs": {
+      "read": {
+        "parameter": true,
+        "deny": ["**/.env", "**/.env.*", "**/.ssh/**", "**/*.pem", "**/*.key"]
+      }
+    }
+  },
   "contributes": {
+    "tools": [
+      {
+        "id": "read_files",
+        "title": "Read Multiple Files",
+        "description": "Read the text content of up to 20 files in one call. Returns each file's content, size, and extension. Binary files and oversized files are skipped with an error message. Use maxSizeKb to control the size limit.",
+        "schema": "./tools/read-files.schema.json",
+        "handler": "./tools/read-files.js"
+      }
+    ],
     "actions": [
       {
         "id": "compare",

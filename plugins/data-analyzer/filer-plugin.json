@@ -12,8 +12,24 @@
   "engines": { "filer": ">=0.2.0" },
   "bundled": false,
   "capabilities": ["analyze-data"],
-  "permissions": {},
+  "permissions": {
+    "fs": {
+      "read": {
+        "parameter": true,
+        "deny": ["**/.env", "**/.env.*", "**/.ssh/**", "**/*.pem", "**/*.key"]
+      }
+    }
+  },
   "contributes": {
+    "tools": [
+      {
+        "id": "read_data_file",
+        "title": "Read Data File",
+        "description": "Read and parse a structured data file. Supports CSV, TSV (returns rows and column names), JSON (returns parsed object/array), and JSONL (returns array of objects). Use maxRows to limit large datasets.",
+        "schema": "./tools/read-data-file.schema.json",
+        "handler": "./tools/read-data-file.js"
+      }
+    ],
     "actions": [
       {
         "id": "analyze-data",

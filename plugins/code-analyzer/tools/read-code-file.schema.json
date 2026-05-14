@@ -1,0 +1,11 @@
+{
+  "type": "object",
+  "properties": {
+    "path": {
+      "type": "string",
+      "format": "file-path",
+      "description": "Absolute path to the code file to read"
+    }
+  },
+  "required": ["path"]
+}

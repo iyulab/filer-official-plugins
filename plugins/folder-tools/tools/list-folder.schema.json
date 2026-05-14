@@ -1,0 +1,15 @@
+{
+  "type": "object",
+  "properties": {
+    "path": {
+      "type": "string",
+      "format": "file-path",
+      "description": "Absolute path to the folder to list"
+    },
+    "filter": {
+      "type": "string",
+      "description": "Optional file extension filter (without dot, e.g. 'txt'). If omitted, all entries are returned."
+    }
+  },
+  "required": ["path"]
+}

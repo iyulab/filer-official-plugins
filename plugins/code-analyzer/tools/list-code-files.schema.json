@@ -1,0 +1,16 @@
+{
+  "type": "object",
+  "properties": {
+    "folderPath": {
+      "type": "string",
+      "format": "file-path",
+      "description": "Absolute path to the folder to search for code files"
+    },
+    "extensions": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Optional list of file extensions to include (without dot, e.g. ['js', 'ts']). Defaults to common code extensions."
+    }
+  },
+  "required": ["folderPath"]
+}

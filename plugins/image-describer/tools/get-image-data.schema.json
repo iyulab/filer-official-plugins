@@ -1,0 +1,16 @@
+{
+  "type": "object",
+  "properties": {
+    "path": {
+      "type": "string",
+      "format": "file-path",
+      "description": "Absolute path to the image file (.png, .jpg, .jpeg, .gif, .webp, .bmp, .svg)"
+    },
+    "includeBase64": {
+      "type": "boolean",
+      "description": "Whether to include base64-encoded image data in the response (for multimodal vision models). Defaults to false. Warning: may produce large output for big images.",
+      "default": false
+    }
+  },
+  "required": ["path"]
+}
