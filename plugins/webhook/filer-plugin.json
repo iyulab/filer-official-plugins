@@ -63,17 +63,11 @@
     },
     "tools": [
       {
-        "name": "webhook_send",
+        "id": "webhook_send",
+        "title": "Send Webhook",
         "description": "Send a custom webhook POST request to the configured URL",
-        "handler": "./tools/send.js",
-        "parameters": {
-          "type": "object",
-          "properties": {
-            "event": { "type": "string", "description": "Event name/type" },
-            "payload": { "type": "object", "description": "JSON payload to send" }
-          },
-          "required": ["event"]
-        }
+        "schema": "./tools/send.schema.json",
+        "handler": "./tools/send.js"
       }
     ],
     "hooks": {

@@ -49,17 +49,11 @@
     },
     "tools": [
       {
-        "name": "slack_send_message",
+        "id": "slack_send_message",
+        "title": "Send Slack Message",
         "description": "Send a message to a Slack channel via webhook",
-        "handler": "./tools/send-message.js",
-        "parameters": {
-          "type": "object",
-          "properties": {
-            "text": { "type": "string", "description": "Message text (supports Slack mrkdwn)" },
-            "channel": { "type": "string", "description": "Channel override (optional)" }
-          },
-          "required": ["text"]
-        }
+        "schema": "./tools/send-message.schema.json",
+        "handler": "./tools/send-message.js"
       }
     ],
     "hooks": {

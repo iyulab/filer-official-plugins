@@ -49,31 +49,18 @@
     },
     "tools": [
       {
-        "name": "notion_create_page",
+        "id": "notion_create_page",
+        "title": "Create Notion Page",
         "description": "Create a new page in a Notion database",
-        "handler": "./tools/create-page.js",
-        "parameters": {
-          "type": "object",
-          "properties": {
-            "title": { "type": "string", "description": "Page title" },
-            "content": { "type": "string", "description": "Page content (plain text, converted to paragraph blocks)" },
-            "databaseId": { "type": "string", "description": "Database ID (uses default if not specified)" }
-          },
-          "required": ["title"]
-        }
+        "schema": "./tools/create-page.schema.json",
+        "handler": "./tools/create-page.js"
       },
       {
-        "name": "notion_append_block",
+        "id": "notion_append_block",
+        "title": "Append to Notion Page",
         "description": "Append content to an existing Notion page",
-        "handler": "./tools/append-block.js",
-        "parameters": {
-          "type": "object",
-          "properties": {
-            "pageId": { "type": "string", "description": "Notion page ID" },
-            "content": { "type": "string", "description": "Content to append as paragraph blocks" }
-          },
-          "required": ["pageId", "content"]
-        }
+        "schema": "./tools/append-block.schema.json",
+        "handler": "./tools/append-block.js"
       }
     ]
   }

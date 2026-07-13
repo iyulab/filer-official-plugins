@@ -1,0 +1,14 @@
+{
+  "type": "object",
+  "properties": {
+    "pageId": {
+      "type": "string",
+      "description": "Notion page ID"
+    },
+    "content": {
+      "type": "string",
+      "description": "Content to append as paragraph blocks"
+    }
+  },
+  "required": ["pageId", "content"]
+}

@@ -1,0 +1,14 @@
+{
+  "type": "object",
+  "properties": {
+    "text": {
+      "type": "string",
+      "description": "Message text (supports Slack mrkdwn)"
+    },
+    "channel": {
+      "type": "string",
+      "description": "Channel override (optional)"
+    }
+  },
+  "required": ["text"]
+}

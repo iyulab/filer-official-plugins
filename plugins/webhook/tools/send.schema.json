@@ -1,0 +1,14 @@
+{
+  "type": "object",
+  "properties": {
+    "event": {
+      "type": "string",
+      "description": "Event name/type"
+    },
+    "payload": {
+      "type": "object",
+      "description": "JSON payload to send"
+    }
+  },
+  "required": ["event"]
+}

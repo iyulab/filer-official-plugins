@@ -1,0 +1,18 @@
+{
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string",
+      "description": "Page title"
+    },
+    "content": {
+      "type": "string",
+      "description": "Page content (plain text, converted to paragraph blocks)"
+    },
+    "databaseId": {
+      "type": "string",
+      "description": "Database ID (uses default if not specified)"
+    }
+  },
+  "required": ["title"]
+}
