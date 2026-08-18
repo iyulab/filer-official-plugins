@@ -11,7 +11,7 @@
   "runtime": "node",
   "engines": { "filer": ">=0.2.0" },
   "bundled": true,
-  "capabilities": ["messenger"],
+  "capabilities": ["messenger", "inbound-channel"],
   "permissions": {
     "fetch": {
       "static": ["api.resend.com"]
@@ -71,24 +71,54 @@
         "secret": true,
         "order": 6
       },
+      "email.imapHost": {
+        "type": "string",
+        "title": "IMAP Host",
+        "description": "IMAP server hostname for receiving mail (e.g. imap.gmail.com)",
+        "order": 7
+      },
+      "email.imapPort": {
+        "type": "number",
+        "title": "IMAP Port",
+        "default": 993,
+        "order": 8
+      },
+      "email.imapUser": {
+        "type": "string",
+        "title": "IMAP Username",
+        "order": 9
+      },
+      "email.imapPassword": {
+        "type": "string",
+        "title": "IMAP Password",
+        "secret": true,
+        "order": 10
+      },
+      "email.enableImapPolling": {
+        "type": "boolean",
+        "title": "Enable inbound email",
+        "description": "Listen for new mail and trigger a Filer agent run for each message",
+        "default": false,
+        "order": 11
+      },
       "email.fromAddress": {
         "type": "string",
         "title": "From Address",
         "description": "Sender email address",
         "required": true,
-        "order": 7
+        "order": 12
       },
       "email.defaultTo": {
         "type": "string",
         "title": "Default Recipient",
         "description": "Default recipient email address",
-        "order": 8
+        "order": 13
       },
       "email.notifyOnAgentComplete": {
         "type": "boolean",
         "title": "Notify on agent completion",
         "default": false,
-        "order": 9
+        "order": 14
       }
     },
     "tools": [
@@ -101,7 +131,9 @@
       }
     ],
     "hooks": {
-      "onAgentComplete": "./hooks/notify-complete.js"
+      "onAppReady": "./hooks/initialize.js",
+      "onAgentComplete": "./hooks/notify-complete.js",
+      "onChannelChanged": "./hooks/on-channel-changed.js"
     }
   }
 }
