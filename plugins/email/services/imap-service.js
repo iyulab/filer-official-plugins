@@ -9,6 +9,7 @@ const { ImapFlow } = require('imapflow');
 const { text } = require('node:stream/consumers');
 const reverseIndex = require('./reverse-channel-index.js');
 const { resolveCursor, isAuthFailure } = require('./imap-cursor.js');
+const { findTextPart } = require('./mime-body.js');
 
 let client = null;
 let isRunning = false;
@@ -189,36 +190,6 @@ async function fetchNewMessages(ctx) {
   if (maxUid > stored.lastUid) {
     await ctx.store.set('email.imapCursor', { uidValidity: stored.uidValidity, lastUid: maxUid });
   }
-}
-
-/**
- * Walk a fetched bodyStructure tree (depth-first, first-match) to find the
- * best available text part to download. Prefers text/plain; falls back to
- * text/html (still MIME-decoded by imapflow's download(), just literal
- * markup) if no text/plain part exists anywhere in the structure.
- * @param {object} structure - MessageStructureObject (message.bodyStructure)
- * @returns {{node:object, type:'text/plain'|'text/html'}|null}
- */
-function findTextPart(structure) {
-  let htmlFallback = null;
-
-  const visit = (node) => {
-    if (!node) return null;
-    if (node.type === 'text/plain') return node;
-    if (node.type === 'text/html' && !htmlFallback) htmlFallback = node;
-    if (Array.isArray(node.childNodes)) {
-      for (const child of node.childNodes) {
-        const found = visit(child);
-        if (found) return found;
-      }
-    }
-    return null;
-  };
-
-  const plain = visit(structure);
-  if (plain) return { node: plain, type: 'text/plain' };
-  if (htmlFallback) return { node: htmlFallback, type: 'text/html' };
-  return null;
 }
 
 /**
