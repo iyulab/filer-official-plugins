@@ -60,6 +60,9 @@ function stop() {
 async function runLoop(ctx, creds, backoffMs) {
   if (!isRunning) return;
 
+  let cursorPrimed = false;
+  const connectedAt = Date.now();
+
   client = new ImapFlow({
     host: creds.host,
     port: creds.port,
@@ -73,6 +76,13 @@ async function runLoop(ctx, creds, backoffMs) {
   });
 
   client.on('exists', () => {
+    // Guard against the connect -> mailboxOpen -> primeCursor window: the
+    // server can fire 'exists' before the UID cursor for *this* session has
+    // been validated against the mailbox's current UIDVALIDITY, which would
+    // otherwise let fetchNewMessages() run against a stale cursor from a
+    // previous session — defeating the invariant primeCursor()/
+    // resolveCursor() exist to protect.
+    if (!isRunning || !cursorPrimed) return;
     fetchNewMessages(ctx).catch((err) => {
       ctx.log.error('Failed to fetch new IMAP messages:', err.message);
     });
@@ -80,17 +90,40 @@ async function runLoop(ctx, creds, backoffMs) {
 
   try {
     await client.connect();
+
+    if (!isRunning) {
+      // stop() raced this in-flight connect — tear down and do not proceed
+      // into mailboxOpen/primeCursor/idle.
+      client.logout().catch(() => {});
+      return;
+    }
+
     ctx.log.info('IMAP inbound listener connected');
 
     const mailbox = await client.mailboxOpen('INBOX');
     await primeCursor(ctx, mailbox);
+    cursorPrimed = true;
     await fetchNewMessages(ctx); // drain anything that arrived before we connected
 
     await new Promise((resolve) => client.on('close', resolve));
 
     if (!isRunning) return;
+
+    // imapflow's own error handling (emitError() -> closeAfter()) routes
+    // essentially every real-world disconnect — dropped connections, server
+    // throttling, a flaky link during IDLE — through this close path, not
+    // the catch block below. Without a delay here, those disconnects
+    // reconnect immediately and can hammer the mail server in an unattended
+    // 24/7 path. Only reset the backoff to the floor once the connection
+    // actually stayed up for a meaningful stretch (1 minute) first, so a
+    // healthy long-lived connection's natural reconnect isn't punished
+    // forever, but a server actively rejecting/dropping us repeatedly still
+    // backs off.
+    const stayedUpMs = Date.now() - connectedAt;
+    const nextBackoff = stayedUpMs > 60_000 ? 1000 : Math.min(backoffMs * 2, 60_000);
     ctx.log.warn('IMAP connection closed, reconnecting');
-    return runLoop(ctx, creds, 1000); // clean close: reset backoff
+    await sleep(nextBackoff);
+    return runLoop(ctx, creds, nextBackoff);
   } catch (err) {
     if (isAuthFailure(err)) {
       ctx.log.error('IMAP authentication failed — stopping, check credentials.');
@@ -259,6 +292,29 @@ async function handleMessage(ctx, message) {
     }
 
     if (resp.status === 404) {
+      // Two structurally different things return 404 here: a genuinely
+      // missing endpoint on a pre-CR-1 host (ASP.NET's default 404, no
+      // body shape to speak of) vs. a real routing rejection from a
+      // current host's /api/triggers/inbound (Results.NotFound(new
+      // {error: "..."}) for "channel not registered" / "no working agent
+      // bound to folder" — see TriggerEndpoints.cs). Falling back to the
+      // legacy path on a routing rejection would silently create an
+      // untagged, non-deduplicated session/chat turn instead of surfacing
+      // that the channel/agent isn't actually set up — losing origin
+      // tagging, which this project treats as an always-win invariant.
+      const responseBody = await resp.text().catch(() => '');
+      let routingError;
+      try {
+        routingError = JSON.parse(responseBody)?.error;
+      } catch {
+        // not JSON — genuinely missing endpoint, fall through to legacy below
+      }
+
+      if (routingError) {
+        ctx.log.warn(`Inbound trigger rejected — routing problem, not a legacy-host case: ${routingError}`);
+        return;
+      }
+
       ctx.log.warn('Host does not support /api/triggers/inbound — using legacy session path');
       await routeViaLegacySessionPath(ctx, hostUrl, channelId, body);
       return;

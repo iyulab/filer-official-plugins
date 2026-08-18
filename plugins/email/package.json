@@ -1,7 +1,7 @@
 {
   "name": "email-plugin-deps",
   "private": true,
-  "description": "Vendored runtime dependencies for the email plugin's IMAP inbound listener — see services/imap-service.js. Committed node_modules, not gitignored: the plugin installer copies this directory verbatim with no npm-install step, so the resolved dependency tree must already exist on disk for Node's module resolution to find it.",
+  "description": "Vendored runtime dependencies for the email plugin's IMAP inbound listener — see services/imap-service.js. Committed node_modules, not gitignored: the plugin installer copies this directory verbatim with no npm-install step, so the resolved dependency tree must already exist on disk for Node's module resolution to find it. DO NOT add a top-level \"type\" field to this file: the plugin's pre-existing send-path files (hooks/notify-complete.js, tools/send-email.js) are ESM and rely on this package.json having no \"type\" field so Node's per-file syntax detection can tell CJS/ESM apart — adding \"type\":\"commonjs\" would break those files.",
   "dependencies": {
     "imapflow": "^1.7.1"
   }
