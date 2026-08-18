@@ -265,9 +265,11 @@ async function handleMessage(ctx, message) {
   const body = await text(download.content);
 
   const channelId = reverseIndex.resolve(fromAddress);
-  const subjectPreview = (message.envelope?.subject || '').substring(0, 50);
 
-  ctx.log.info(`Inbound email for channel=${channelId} from=${fromAddress}: "${subjectPreview}"`);
+  // Deliberately no sender address / subject here — this line ends up verbatim in
+  // ~/.filer/logs/ui-{date}.log and from there in user-shareable support bundles
+  // (support-bundle.ts copies log files wholesale, no redaction pass).
+  ctx.log.info(`Inbound email routed to channel=${channelId} (uid=${message.uid})`);
 
   const hostUrl = process.env.FILER_HOST_URL || 'http://localhost:5100';
   const messageId = message.envelope?.messageId || `email-${message.uid}`;

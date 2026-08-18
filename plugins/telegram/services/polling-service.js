@@ -120,7 +120,10 @@ async function handleUpdate(ctx, botToken, update) {
     return;
   }
 
-  ctx.log.info(`Inbound message for channel=${channelId}: "${text.substring(0, 50)}..."`);
+  // Deliberately no message text here — this line ends up verbatim in
+  // ~/.filer/logs/ui-{date}.log and from there in user-shareable support bundles
+  // (support-bundle.ts copies log files wholesale, no redaction pass).
+  ctx.log.info(`Inbound message routed to channel=${channelId} (${text.length} chars)`);
 
   // CR-1 (Sprint 42): route through the unified /api/triggers/inbound
   // endpoint so the host can tag the agent run with
