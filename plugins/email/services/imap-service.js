@@ -141,7 +141,7 @@ async function fetchNewMessages(ctx) {
 
   let maxUid = stored.lastUid;
 
-  for await (const message of client.fetch(`${stored.lastUid + 1}:*`, { envelope: true }, { uid: true })) {
+  for await (const message of client.fetch(`${stored.lastUid + 1}:*`, { envelope: true, bodyStructure: true }, { uid: true })) {
     if (message.uid <= stored.lastUid) continue; // the ':*' range can re-yield the last known UID
 
     try {
@@ -159,13 +159,76 @@ async function fetchNewMessages(ctx) {
 }
 
 /**
+ * Walk a fetched bodyStructure tree (depth-first, first-match) to find the
+ * best available text part to download. Prefers text/plain; falls back to
+ * text/html (still MIME-decoded by imapflow's download(), just literal
+ * markup) if no text/plain part exists anywhere in the structure.
+ * @param {object} structure - MessageStructureObject (message.bodyStructure)
+ * @returns {{node:object, type:'text/plain'|'text/html'}|null}
+ */
+function findTextPart(structure) {
+  let htmlFallback = null;
+
+  const visit = (node) => {
+    if (!node) return null;
+    if (node.type === 'text/plain') return node;
+    if (node.type === 'text/html' && !htmlFallback) htmlFallback = node;
+    if (Array.isArray(node.childNodes)) {
+      for (const child of node.childNodes) {
+        const found = visit(child);
+        if (found) return found;
+      }
+    }
+    return null;
+  };
+
+  const plain = visit(structure);
+  if (plain) return { node: plain, type: 'text/plain' };
+  if (htmlFallback) return { node: htmlFallback, type: 'text/html' };
+  return null;
+}
+
+/**
+ * Download the best available text body for a message, given its already-
+ * fetched bodyStructure. Prefers text/plain, degrades to text/html, and as
+ * a last resort downloads the entire raw rfc822 message (undecoded MIME
+ * source, headers included) if no text part is found anywhere in the
+ * structure. Each degradation is logged so it stays visible instead of
+ * silently sending malformed/raw content upstream.
+ * @param {object} ctx - PluginContext
+ * @param {number} uid
+ * @param {object|undefined} structure - message.bodyStructure
+ * @returns {Promise<{meta:object, content:import('stream').Readable}>}
+ */
+async function downloadTextBody(ctx, uid, structure) {
+  const found = structure && findTextPart(structure);
+
+  if (!found) {
+    ctx.log.warn(`No text/plain or text/html part found for uid=${uid} — downloading raw message source instead`);
+    return client.download(uid, undefined, { uid: true });
+  }
+
+  if (found.type === 'text/html') {
+    ctx.log.warn(`No text/plain part found for uid=${uid} — using text/html part instead (content will include HTML markup)`);
+  }
+
+  // A part with no `.part` id is the bodyStructure root itself — i.e. a
+  // simple, non-multipart message. imapflow's download() special-cases the
+  // string '1' for exactly this case (translating it internally to IMAP's
+  // TEXT section) — passing undefined here would silently fall back to
+  // downloading the entire raw rfc822 message instead of the decoded body.
+  const part = found.node.part || '1';
+  return client.download(uid, part, { uid: true });
+}
+
+/**
  * Download, resolve the channel, and route one message to the host.
  * @param {object} ctx - PluginContext
- * @param {{uid:number, envelope:object}} message
+ * @param {{uid:number, envelope:object, bodyStructure:object}} message
  */
 async function handleMessage(ctx, message) {
   const fromAddress = message.envelope?.from?.[0]?.address;
-  const download = await client.download(message.uid, undefined, { uid: true });
+  const download = await downloadTextBody(ctx, message.uid, message.bodyStructure);
   const body = await text(download.content);
 
   const channelId = reverseIndex.resolve(fromAddress);
