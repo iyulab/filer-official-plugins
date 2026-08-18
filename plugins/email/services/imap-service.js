@@ -10,9 +10,21 @@ const { text } = require('node:stream/consumers');
 const reverseIndex = require('./reverse-channel-index.js');
 const { resolveCursor, isAuthFailure } = require('./imap-cursor.js');
 const { findTextPart } = require('./mime-body.js');
+const { createCoalescingGuard } = require('./coalescing-guard.js');
 
 let client = null;
 let isRunning = false;
+
+// Guards fetchNewMessages() against overlap. A rapid burst of 'exists'
+// events (and the connect-time drain racing a same-tick 'exists', both
+// reachable — 'exists' only waits on `cursorPrimed`, not on any prior fetch
+// finishing) would otherwise start a second fetchNewMessages() call that
+// reads the same not-yet-updated stored cursor as the first, re-downloading
+// and re-processing messages the first call is already handling — the
+// host's (source_plugin, message_id) dedup (SC-INBOUND-1) absorbs the
+// resulting double-trigger, but the redundant IMAP fetch + HTTP POST still
+// happen. See coalescing-guard.js for the re-entrancy semantics.
+const scheduleFetch = createCoalescingGuard(fetchNewMessages);
 
 /**
  * Start the IMAP listener.
@@ -84,7 +96,7 @@ async function runLoop(ctx, creds, backoffMs) {
     // previous session — defeating the invariant primeCursor()/
     // resolveCursor() exist to protect.
     if (!isRunning || !cursorPrimed) return;
-    fetchNewMessages(ctx).catch((err) => {
+    scheduleFetch(ctx).catch((err) => {
       ctx.log.error('Failed to fetch new IMAP messages:', err.message);
     });
   });
@@ -104,7 +116,7 @@ async function runLoop(ctx, creds, backoffMs) {
     const mailbox = await client.mailboxOpen('INBOX');
     await primeCursor(ctx, mailbox);
     cursorPrimed = true;
-    await fetchNewMessages(ctx); // drain anything that arrived before we connected
+    await scheduleFetch(ctx); // drain anything that arrived before we connected
 
     await new Promise((resolve) => client.on('close', resolve));
 
