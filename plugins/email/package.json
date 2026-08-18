@@ -1,0 +1,8 @@
+{
+  "name": "email-plugin-deps",
+  "private": true,
+  "description": "Vendored runtime dependencies for the email plugin's IMAP inbound listener — see services/imap-service.js. Committed node_modules, not gitignored: the plugin installer copies this directory verbatim with no npm-install step, so the resolved dependency tree must already exist on disk for Node's module resolution to find it.",
+  "dependencies": {
+    "imapflow": "^1.7.1"
+  }
+}
