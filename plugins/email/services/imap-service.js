@@ -179,17 +179,34 @@ async function primeCursor(ctx, mailbox) {
 
 /**
  * Fetch and process every message newer than the stored cursor.
+ *
+ * Two passes, deliberately not fused into one loop: imapflow's own `fetch()` JSDoc warns
+ * "You can not run any IMAP commands in this loop otherwise you will end up in a deadloop"
+ * (`node_modules/imapflow/lib/imap-flow.js`, `fetch()`). `handleMessage()` issues a second
+ * command on the same connection (`client.download()`, via `downloadTextBody()`) — the FETCH
+ * command can't complete until every yielded message's backpressure `next()` is called, and
+ * `next()` here would wait on `handleMessage`, which needs a second command on the very
+ * connection FETCH is still holding. That circular wait is a genuine deadlock, not a timeout:
+ * nothing ever rejects, so the caller (the coalescing guard's in-flight promise) hangs
+ * forever — exactly the drain-fetch hang this fixes
+ * (`ISSUE-filer-20260820-imap-post-reconnect-drain-fetch-hangs-silently.md`). Draining the
+ * metadata-only fetch fully into `messages` first, then downloading each body afterward,
+ * keeps the two IMAP commands strictly sequential on the connection.
  * @param {object} ctx - PluginContext
  */
 async function fetchNewMessages(ctx) {
   const stored = await ctx.store.get('email.imapCursor');
   if (!stored) return;
 
-  let maxUid = stored.lastUid;
-
+  const messages = [];
   for await (const message of client.fetch(`${stored.lastUid + 1}:*`, { envelope: true, bodyStructure: true }, { uid: true })) {
     if (message.uid <= stored.lastUid) continue; // the ':*' range can re-yield the last known UID
+    messages.push(message);
+  }
 
+  let maxUid = stored.lastUid;
+
+  for (const message of messages) {
     try {
       await handleMessage(ctx, message);
     } catch (err) {
@@ -244,10 +261,21 @@ async function downloadTextBody(ctx, uid, structure) {
  */
 async function handleMessage(ctx, message) {
   const fromAddress = message.envelope?.from?.[0]?.address;
+  const channelId = reverseIndex.resolve(fromAddress);
+
+  if (!channelId) {
+    // Resolve before downloading: an unmapped, unallowlisted sender is
+    // dropped without spending a second IMAP command on its body. Mirrors
+    // telegram/services/polling-service.js's own "no channelId -> drop"
+    // gate — see ISSUE-filer-20260820-imap-inbound-trigger-no-sender-allowlist.md.
+    // Deliberately no sender address here — this line ends up verbatim in
+    // ~/.filer/logs/ui-{date}.log and from there in user-shareable support bundles.
+    ctx.log.warn(`Inbound email rejected — sender not on the allowlist (uid=${message.uid})`);
+    return;
+  }
+
   const download = await downloadTextBody(ctx, message.uid, message.bodyStructure);
   const body = await text(download.content);
-
-  const channelId = reverseIndex.resolve(fromAddress);
 
   // Deliberately no sender address / subject here — this line ends up verbatim in
   // ~/.filer/logs/ui-{date}.log and from there in user-shareable support bundles

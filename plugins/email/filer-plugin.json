@@ -101,24 +101,30 @@
         "default": false,
         "order": 11
       },
+      "email.senderAllowlist": {
+        "type": "string",
+        "title": "Allowed senders",
+        "description": "Comma-separated senders allowed to trigger an agent run, e.g. \"alice@example.com, @company.com\" (an entry starting with @ allows the whole domain). Mail from anyone else is dropped and logged, never routed. Leave empty to allow no sender until this is set.",
+        "order": 12
+      },
       "email.fromAddress": {
         "type": "string",
         "title": "From Address",
         "description": "Sender email address",
         "required": true,
-        "order": 12
+        "order": 13
       },
       "email.defaultTo": {
         "type": "string",
         "title": "Default Recipient",
         "description": "Default recipient email address",
-        "order": 13
+        "order": 14
       },
       "email.notifyOnAgentComplete": {
         "type": "boolean",
         "title": "Notify on agent completion",
         "default": false,
-        "order": 14
+        "order": 15
       }
     },
     "tools": [
