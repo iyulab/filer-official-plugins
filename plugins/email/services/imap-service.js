@@ -9,7 +9,7 @@ const { ImapFlow } = require('imapflow');
 const { text } = require('node:stream/consumers');
 const reverseIndex = require('./reverse-channel-index.js');
 const { resolveCursor, isAuthFailure } = require('./imap-cursor.js');
-const { findTextPart } = require('./mime-body.js');
+const { findTextPart, findAttachmentParts, formatAttachmentMention } = require('./mime-body.js');
 const { createCoalescingGuard } = require('./coalescing-guard.js');
 
 let client = null;
@@ -277,10 +277,22 @@ async function handleMessage(ctx, message) {
   const download = await downloadTextBody(ctx, message.uid, message.bodyStructure);
   const body = await text(download.content);
 
+  // ISSUE-filer-20260820-email-inbound-attachments-silently-dropped.md (HD-53
+  // step 1, mention-only): findTextPart() above already skips attachment
+  // parts to find the real body; nothing used to look at what it skipped, so
+  // an invoice/contract/etc. attachment vanished with no trace anywhere.
+  // Content is still not saved — that decision (where, size/type limits) is
+  // step 2 of the same issue — but its existence is no longer silent.
+  const attachments = message.bodyStructure ? findAttachmentParts(message.bodyStructure) : [];
+  const content = body + formatAttachmentMention(attachments);
+
   // Deliberately no sender address / subject here — this line ends up verbatim in
   // ~/.filer/logs/ui-{date}.log and from there in user-shareable support bundles
   // (support-bundle.ts copies log files wholesale, no redaction pass).
-  ctx.log.info(`Inbound email routed to channel=${channelId} (uid=${message.uid})`);
+  ctx.log.info(
+    `Inbound email routed to channel=${channelId} (uid=${message.uid})` +
+      (attachments.length > 0 ? ` — ${attachments.length} attachment(s) not saved` : '')
+  );
 
   const hostUrl = process.env.FILER_HOST_URL || 'http://localhost:5100';
   const messageId = message.envelope?.messageId || `email-${message.uid}`;
@@ -296,7 +308,7 @@ async function handleMessage(ctx, message) {
         channel_id: channelId,
         source_plugin: 'email',
         message_id: messageId,
-        content: body,
+        content,
       }),
     });
 
@@ -329,7 +341,7 @@ async function handleMessage(ctx, message) {
       }
 
       ctx.log.warn('Host does not support /api/triggers/inbound — using legacy session path');
-      await routeViaLegacySessionPath(ctx, hostUrl, channelId, body);
+      await routeViaLegacySessionPath(ctx, hostUrl, channelId, content);
       return;
     }
 

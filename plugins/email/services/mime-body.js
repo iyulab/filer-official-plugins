@@ -51,4 +51,58 @@ function findTextPart(structure) {
   return null;
 }
 
-module.exports = { findTextPart };
+/**
+ * Walk a fetched bodyStructure tree collecting every leaf part that is NOT a
+ * body candidate (see isBodyCandidate) — every attachment, image, or other
+ * non-text-body payload the message carries, including a text/plain or
+ * text/html part explicitly marked `disposition: attachment` (the same kind
+ * findTextPart deliberately skips as the message body). A multipart
+ * container node is never itself an attachment — only its leaf children can
+ * carry content, so containers are walked through, not collected.
+ *
+ * ISSUE-filer-20260820-email-inbound-attachments-silently-dropped.md (HD-53
+ * step 1): this plugin never looked at what findTextPart skips. Nothing in
+ * this module downloads or persists attachment content — that is step 2 of
+ * the same issue, still undecided (storage location, size/type limits).
+ * @param {object} structure - MessageStructureObject (message.bodyStructure)
+ * @returns {{filename:string, type:string, size:number|undefined}[]}
+ */
+function findAttachmentParts(structure) {
+  const attachments = [];
+  let unnamedCount = 0;
+
+  const visit = (node) => {
+    if (!node) return;
+    if (Array.isArray(node.childNodes) && node.childNodes.length > 0) {
+      for (const child of node.childNodes) visit(child);
+      return;
+    }
+    if (isBodyCandidate(node)) return;
+
+    unnamedCount += 1;
+    const filename =
+      node.dispositionParameters?.filename ||
+      node.parameters?.name ||
+      `part-${node.part || unnamedCount}`;
+    attachments.push({ filename, type: node.type, size: node.size });
+  };
+
+  visit(structure);
+  return attachments;
+}
+
+/**
+ * Format found attachments into a short plain-text note appended to the
+ * message body — the mention-only half of HD-53 step 1: attachments are
+ * still not saved anywhere, but their existence is no longer silent.
+ * @param {{filename:string}[]} attachments
+ * @returns {string} empty string when there are no attachments
+ */
+function formatAttachmentMention(attachments) {
+  if (!attachments || attachments.length === 0) return '';
+  const names = attachments.map((a) => a.filename).join(', ');
+  const noun = attachments.length === 1 ? 'attachment' : 'attachments';
+  return `\n\n[${attachments.length} ${noun} received but not saved: ${names}]`;
+}
+
+module.exports = { findTextPart, findAttachmentParts, formatAttachmentMention };
