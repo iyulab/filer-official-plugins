@@ -2,7 +2,7 @@
  * Shared Telegram Bot API client and Forum Topic resolution.
  */
 
-async function telegramApi(botToken, method, params) {
+async function telegramApiCall(botToken, method, params) {
   const resp = await fetch(`https://api.telegram.org/bot${botToken}/${method}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -11,6 +11,28 @@ async function telegramApi(botToken, method, params) {
   const data = await resp.json();
   if (!data.ok) throw new Error(`Telegram ${method}: ${data.description}`);
   return data;
+}
+
+/**
+ * Text sent with `parse_mode: 'Markdown'` is often free-form, not authored for
+ * Telegram's strict legacy Markdown dialect — a stray asterisk (e.g. inside a
+ * filename like `*.docx`) or an unclosed backtick is enough for Telegram to
+ * reject the whole message with "can't parse entities". Losing the message
+ * outright over a formatting quirk is worse than losing formatting, so retry
+ * once as plain text on that specific error — the same degrade-and-retry
+ * shape `sendWithTopicRetry` already uses for a deleted topic, just one level
+ * down, so every caller benefits without duplicating the fallback.
+ */
+async function telegramApi(botToken, method, params) {
+  try {
+    return await telegramApiCall(botToken, method, params);
+  } catch (e) {
+    if (params.parse_mode && /can't parse entities/i.test(e.message)) {
+      const { parse_mode, ...plain } = params;
+      return await telegramApiCall(botToken, method, plain);
+    }
+    throw e;
+  }
 }
 
 /**

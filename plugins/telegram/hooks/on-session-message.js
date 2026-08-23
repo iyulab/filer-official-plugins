@@ -9,16 +9,27 @@ module.exports = async function onSessionMessage(event, ctx) {
   const format = (await ctx.settings.get('telegram.messageFormat')) || 'Markdown';
 
   try {
-    const hostUrl = process.env.FILER_HOST_URL || 'http://localhost:5100';
-    const resp = await ctx.fetch(`${hostUrl}/api/sessions/${event.sessionId}/history`).then(r => r.json());
-    if (!resp || !Array.isArray(resp)) return;
+    // A host-triggered working-agent session's transcript is never written to
+    // the same file the /history endpoint reads (that write path lives in the
+    // chat endpoint, which trigger-driven sessions bypass entirely) — the
+    // fetch below would 404 for every one of them. When the event already
+    // carries the result text (host-triggered path), use it directly and skip
+    // the fetch. A UI-chat-panel session's emission doesn't set `result`, so
+    // this falls through to the pre-existing fetch-based lookup unchanged.
+    let text = typeof event.result === 'string' ? event.result : null;
 
-    const lastAssistant = [...resp].reverse().find(m => m.role === 'assistant');
-    if (!lastAssistant?.content) return;
+    if (!text) {
+      const hostUrl = process.env.FILER_HOST_URL || 'http://localhost:5100';
+      const resp = await ctx.fetch(`${hostUrl}/api/sessions/${event.sessionId}/history`).then(r => r.json());
+      if (!resp || !Array.isArray(resp)) return;
 
-    let text = typeof lastAssistant.content === 'string'
-      ? lastAssistant.content
-      : JSON.stringify(lastAssistant.content);
+      const lastAssistant = [...resp].reverse().find(m => m.role === 'assistant');
+      if (!lastAssistant?.content) return;
+
+      text = typeof lastAssistant.content === 'string'
+        ? lastAssistant.content
+        : JSON.stringify(lastAssistant.content);
+    }
 
     if (text.length > 4000) {
       text = text.substring(0, 4000) + '\n\n... [truncated]';
