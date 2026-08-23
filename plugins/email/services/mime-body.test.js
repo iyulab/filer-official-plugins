@@ -1,6 +1,11 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { findTextPart, findAttachmentParts, formatAttachmentMention } = require('./mime-body.js');
+const {
+  findTextPart,
+  findAttachmentParts,
+  isBlockedAttachmentType,
+  exceedsDownloadSizeCeiling,
+} = require('./mime-body.js');
 
 test('findTextPart returns the text/plain part when the message is a simple text body', () => {
   const structure = { type: 'text/plain' };
@@ -46,7 +51,8 @@ test('findTextPart returns null for an empty/undefined structure', () => {
   assert.equal(findTextPart(null), null);
 });
 
-// ── findAttachmentParts (HD-53 step 1: mention, not persist) ──
+// ── findAttachmentParts (HD-53 step 1: metadata; HD-56 step 2: `part` added
+// so a caller can download the actual bytes) ──
 
 test('findAttachmentParts returns empty for a simple text-only message', () => {
   const structure = { type: 'text/plain' };
@@ -65,7 +71,7 @@ test('findAttachmentParts finds a single application/pdf attachment alongside th
   const structure = { type: 'multipart/mixed', childNodes: [body, pdf] };
 
   assert.deepEqual(findAttachmentParts(structure), [
-    { filename: 'invoice.pdf', type: 'application/pdf', size: 12345 },
+    { filename: 'invoice.pdf', type: 'application/pdf', size: 12345, part: '2' },
   ]);
 });
 
@@ -146,19 +152,46 @@ test('findAttachmentParts returns empty for an empty/undefined structure', () =>
   assert.deepEqual(findAttachmentParts(null), []);
 });
 
-// ── formatAttachmentMention ──
+test('findAttachmentParts includes part so a caller can download it', () => {
+  const pdf = { type: 'application/pdf', disposition: 'attachment', part: '2' };
+  const structure = { type: 'multipart/mixed', childNodes: [pdf] };
 
-test('formatAttachmentMention returns empty string for no attachments', () => {
-  assert.equal(formatAttachmentMention([]), '');
-  assert.equal(formatAttachmentMention(undefined), '');
+  assert.equal(findAttachmentParts(structure)[0].part, '2');
 });
 
-test('formatAttachmentMention formats a single attachment with singular noun', () => {
-  const note = formatAttachmentMention([{ filename: 'invoice.pdf' }]);
-  assert.equal(note, '\n\n[1 attachment received but not saved: invoice.pdf]');
+// ── isBlockedAttachmentType / exceedsDownloadSizeCeiling (HD-56 step 2:
+// client-side pre-filters — the host is the authoritative check) ──
+
+test('isBlockedAttachmentType blocks each owner-decided script/executable extension', () => {
+  for (const ext of ['.exe', '.bat', '.cmd', '.ps1', '.vbs', '.js']) {
+    assert.equal(isBlockedAttachmentType(`payload${ext}`), true, ext);
+  }
 });
 
-test('formatAttachmentMention formats multiple attachments with plural noun and joins names', () => {
-  const note = formatAttachmentMention([{ filename: 'invoice.pdf' }, { filename: 'screenshot.png' }]);
-  assert.equal(note, '\n\n[2 attachments received but not saved: invoice.pdf, screenshot.png]');
+test('isBlockedAttachmentType is case-insensitive', () => {
+  assert.equal(isBlockedAttachmentType('payload.EXE'), true);
+});
+
+test('isBlockedAttachmentType allows ordinary document/image types', () => {
+  assert.equal(isBlockedAttachmentType('invoice.pdf'), false);
+  assert.equal(isBlockedAttachmentType('screenshot.png'), false);
+});
+
+test('isBlockedAttachmentType allows a filename with no extension at all', () => {
+  assert.equal(isBlockedAttachmentType('README'), false);
+});
+
+test('exceedsDownloadSizeCeiling is false for sizes at or under the ceiling', () => {
+  assert.equal(exceedsDownloadSizeCeiling(100 * 1024 * 1024), false);
+  assert.equal(exceedsDownloadSizeCeiling(1024), false);
+});
+
+test('exceedsDownloadSizeCeiling is true for a size over the ceiling', () => {
+  assert.equal(exceedsDownloadSizeCeiling(100 * 1024 * 1024 + 1), true);
+});
+
+test('exceedsDownloadSizeCeiling is false when size is unknown (undefined)', () => {
+  // bodyStructure doesn't always report a size — treat unknown as "let it
+  // through the client pre-filter" since the host re-checks anyway.
+  assert.equal(exceedsDownloadSizeCeiling(undefined), false);
 });

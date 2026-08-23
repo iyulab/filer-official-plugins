@@ -6,10 +6,10 @@
  */
 
 const { ImapFlow } = require('imapflow');
-const { text } = require('node:stream/consumers');
+const { text, buffer } = require('node:stream/consumers');
 const reverseIndex = require('./reverse-channel-index.js');
 const { resolveCursor, isAuthFailure } = require('./imap-cursor.js');
-const { findTextPart, findAttachmentParts, formatAttachmentMention } = require('./mime-body.js');
+const { findTextPart, findAttachmentParts, isBlockedAttachmentType, exceedsDownloadSizeCeiling } = require('./mime-body.js');
 const { createCoalescingGuard } = require('./coalescing-guard.js');
 
 let client = null;
@@ -255,6 +255,40 @@ async function downloadTextBody(ctx, uid, structure) {
 }
 
 /**
+ * Download one attachment part's raw bytes, base64-encode it for the JSON
+ * trigger payload. Returns null (does not throw) when the part is missing,
+ * too large, or a blocked type — findAttachmentParts()'s metadata pass
+ * already knows filename/size without downloading, so those checks happen
+ * before this is ever called.
+ * @param {object} ctx - PluginContext
+ * @param {number} uid
+ * @param {{filename:string, size:number|undefined, part:string|undefined}} attachment
+ * @returns {Promise<{filename:string, content_base64:string}|null>}
+ */
+async function downloadAttachment(ctx, uid, attachment) {
+  if (!attachment.part) return null; // no addressable IMAP part — can't download
+
+  if (isBlockedAttachmentType(attachment.filename)) {
+    ctx.log.warn(`Inbound email attachment skipped — blocked file type (uid=${uid}): ${attachment.filename}`);
+    return null;
+  }
+
+  if (exceedsDownloadSizeCeiling(attachment.size)) {
+    ctx.log.warn(`Inbound email attachment skipped — exceeds download size ceiling (uid=${uid}): ${attachment.filename}`);
+    return null;
+  }
+
+  try {
+    const download = await client.download(uid, attachment.part, { uid: true });
+    const bytes = await buffer(download.content);
+    return { filename: attachment.filename, content_base64: bytes.toString('base64') };
+  } catch (err) {
+    ctx.log.warn(`Failed to download attachment part=${attachment.part} (uid=${uid}): ${err.message}`);
+    return null;
+  }
+}
+
+/**
  * Download, resolve the channel, and route one message to the host.
  * @param {object} ctx - PluginContext
  * @param {{uid:number, envelope:object, bodyStructure:object}} message
@@ -275,23 +309,32 @@ async function handleMessage(ctx, message) {
   }
 
   const download = await downloadTextBody(ctx, message.uid, message.bodyStructure);
-  const body = await text(download.content);
+  const content = await text(download.content);
 
-  // ISSUE-filer-20260820-email-inbound-attachments-silently-dropped.md (HD-53
-  // step 1, mention-only): findTextPart() above already skips attachment
-  // parts to find the real body; nothing used to look at what it skipped, so
-  // an invoice/contract/etc. attachment vanished with no trace anywhere.
-  // Content is still not saved — that decision (where, size/type limits) is
-  // step 2 of the same issue — but its existence is no longer silent.
-  const attachments = message.bodyStructure ? findAttachmentParts(message.bodyStructure) : [];
-  const content = body + formatAttachmentMention(attachments);
+  // ISSUE-filer-20260820-email-inbound-attachments-silently-dropped.md.
+  // HD-53 step 1: findTextPart() above already skips attachment parts to
+  // find the real body; nothing used to look at what it skipped, so an
+  // invoice/contract/etc. attachment vanished with no trace anywhere.
+  // HD-56 step 2: the actual save now happens host-side (channel.Path is
+  // resolved there, not here — see TriggerEndpoints.cs /
+  // InboundAttachmentPersister.cs) — this plugin's job is only to resolve
+  // and base64-encode the bytes; the host appends the real saved/rejected
+  // outcome to the agent's first-turn message, so this plugin no longer
+  // builds its own "not saved" mention (it would be wrong for anything the
+  // host actually manages to save).
+  const attachmentMetas = message.bodyStructure ? findAttachmentParts(message.bodyStructure) : [];
+  const resolvedAttachments = (
+    await Promise.all(attachmentMetas.map((a) => downloadAttachment(ctx, message.uid, a)))
+  ).filter(Boolean);
 
   // Deliberately no sender address / subject here — this line ends up verbatim in
   // ~/.filer/logs/ui-{date}.log and from there in user-shareable support bundles
   // (support-bundle.ts copies log files wholesale, no redaction pass).
   ctx.log.info(
     `Inbound email routed to channel=${channelId} (uid=${message.uid})` +
-      (attachments.length > 0 ? ` — ${attachments.length} attachment(s) not saved` : '')
+      (attachmentMetas.length > 0
+        ? ` — ${resolvedAttachments.length}/${attachmentMetas.length} attachment(s) resolved for upload`
+        : '')
   );
 
   const hostUrl = process.env.FILER_HOST_URL || 'http://localhost:5100';
@@ -309,6 +352,7 @@ async function handleMessage(ctx, message) {
         source_plugin: 'email',
         message_id: messageId,
         content,
+        ...(resolvedAttachments.length > 0 ? { attachments: resolvedAttachments } : {}),
       }),
     });
 

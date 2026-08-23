@@ -60,12 +60,15 @@ function findTextPart(structure) {
  * container node is never itself an attachment — only its leaf children can
  * carry content, so containers are walked through, not collected.
  *
- * ISSUE-filer-20260820-email-inbound-attachments-silently-dropped.md (HD-53
- * step 1): this plugin never looked at what findTextPart skips. Nothing in
- * this module downloads or persists attachment content — that is step 2 of
- * the same issue, still undecided (storage location, size/type limits).
+ * ISSUE-filer-20260820-email-inbound-attachments-silently-dropped.md.
+ * HD-53 step 1: this plugin never looked at what findTextPart skips — fixed
+ * by this function existing at all. HD-56 step 2: `part` is included so a
+ * caller can pass it straight to imapflow's `client.download(uid, part,
+ * {uid:true})` (the same shape downloadTextBody already uses) to fetch the
+ * actual bytes — this module stays pure/side-effect-free per its header, so
+ * downloading is the caller's job (imap-service.js).
  * @param {object} structure - MessageStructureObject (message.bodyStructure)
- * @returns {{filename:string, type:string, size:number|undefined}[]}
+ * @returns {{filename:string, type:string, size:number|undefined, part:string|undefined}[]}
  */
 function findAttachmentParts(structure) {
   const attachments = [];
@@ -84,25 +87,42 @@ function findAttachmentParts(structure) {
       node.dispositionParameters?.filename ||
       node.parameters?.name ||
       `part-${node.part || unnamedCount}`;
-    attachments.push({ filename, type: node.type, size: node.size });
+    attachments.push({ filename, type: node.type, size: node.size, part: node.part });
   };
 
   visit(structure);
   return attachments;
 }
 
+// HD-56 step 2 (ISSUE-filer-20260820-email-inbound-attachments-silently-dropped.md):
+// client-side pre-filters only, to avoid downloading an attachment over IMAP
+// that the host would reject anyway. The host (`InboundAttachmentPersister.cs`)
+// is the authoritative check — it re-validates size against the live
+// FilerRagOptions.MaxFileSizeMB and re-checks the same extension denylist, so
+// a drifted copy here only wastes bandwidth, it never creates a security gap.
+const BLOCKED_ATTACHMENT_EXTENSIONS = ['.exe', '.bat', '.cmd', '.ps1', '.vbs', '.js'];
+const MAX_ATTACHMENT_DOWNLOAD_BYTES = 100 * 1024 * 1024;
+
 /**
- * Format found attachments into a short plain-text note appended to the
- * message body — the mention-only half of HD-53 step 1: attachments are
- * still not saved anywhere, but their existence is no longer silent.
- * @param {{filename:string}[]} attachments
- * @returns {string} empty string when there are no attachments
+ * @param {string} filename
+ * @returns {boolean}
  */
-function formatAttachmentMention(attachments) {
-  if (!attachments || attachments.length === 0) return '';
-  const names = attachments.map((a) => a.filename).join(', ');
-  const noun = attachments.length === 1 ? 'attachment' : 'attachments';
-  return `\n\n[${attachments.length} ${noun} received but not saved: ${names}]`;
+function isBlockedAttachmentType(filename) {
+  const ext = filename && filename.includes('.') ? `.${filename.split('.').pop().toLowerCase()}` : '';
+  return BLOCKED_ATTACHMENT_EXTENSIONS.includes(ext);
 }
 
-module.exports = { findTextPart, findAttachmentParts, formatAttachmentMention };
+/**
+ * @param {number|undefined} size
+ * @returns {boolean}
+ */
+function exceedsDownloadSizeCeiling(size) {
+  return typeof size === 'number' && size > MAX_ATTACHMENT_DOWNLOAD_BYTES;
+}
+
+module.exports = {
+  findTextPart,
+  findAttachmentParts,
+  isBlockedAttachmentType,
+  exceedsDownloadSizeCeiling,
+};
