@@ -1,0 +1,8 @@
+{
+  "name": "data-analyzer-plugin-deps",
+  "private": true,
+  "description": "Vendored runtime dependencies for the data-analyzer plugin's Excel parsing — see tools/read-data-file.js. Committed node_modules, not gitignored: the plugin installer copies this directory verbatim with no npm-install step, so the resolved dependency tree must already exist on disk for Node's module resolution to find it (same pattern as plugins/email/package.json).",
+  "dependencies": {
+    "xlsx": "^0.18.5"
+  }
+}

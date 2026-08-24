@@ -25,7 +25,7 @@
       {
         "id": "read_data_file",
         "title": "Read Data File",
-        "description": "Read and parse a structured data file. Supports CSV, TSV (returns rows and column names), JSON (returns parsed object/array), and JSONL (returns array of objects). Use maxRows to limit large datasets.",
+        "description": "Read and parse a structured data file. Supports CSV, TSV (returns rows and column names), JSON (returns parsed object/array), JSONL (returns array of objects), and Excel .xlsx/.xls (returns the first sheet's rows and column names, plus the full list of sheet names). Use maxRows to limit large datasets.",
         "schema": "./tools/read-data-file.schema.json",
         "handler": "./tools/read-data-file.js"
       }

@@ -4,11 +4,11 @@
     "path": {
       "type": "string",
       "format": "file-path",
-      "description": "Absolute path to the data file (.csv, .json, .jsonl, .tsv)"
+      "description": "Absolute path to the data file (.csv, .json, .jsonl, .tsv, .xlsx, .xls)"
     },
     "maxRows": {
       "type": "integer",
-      "description": "Maximum number of rows to return for CSV/TSV files. Defaults to 200.",
+      "description": "Maximum number of rows to return for CSV/TSV/Excel files. Defaults to 200.",
       "default": 200,
       "minimum": 1,
       "maximum": 5000

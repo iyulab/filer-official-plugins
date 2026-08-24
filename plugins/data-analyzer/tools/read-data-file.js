@@ -1,3 +1,21 @@
+const XLSX = require('xlsx');
+
+function parseExcel(buffer, maxRows) {
+  const workbook = XLSX.read(buffer, { type: 'buffer' });
+  const sheetName = workbook.SheetNames[0];
+  const sheet = workbook.Sheets[sheetName];
+  const rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+  const columns = rows.length > 0 ? Object.keys(rows[0]) : [];
+  return {
+    sheetName,
+    sheetNames: workbook.SheetNames,
+    columns,
+    rows: rows.slice(0, maxRows),
+    rowCount: rows.length,
+    truncated: rows.length > maxRows,
+  };
+}
+
 function parseCsv(text, delimiter) {
   const lines = text.split(/\r?\n/).filter(l => l.trim());
   if (lines.length === 0) return { columns: [], rows: [], rowCount: 0 };
@@ -42,6 +60,23 @@ module.exports = async function handler(params, ctx) {
   try {
     const buffer = await ctx.fs.read(filePath);
     const size = buffer.length;
+
+    if (ext === 'xlsx' || ext === 'xls') {
+      const { sheetName, sheetNames, columns, rows, rowCount, truncated } = parseExcel(buffer, maxRows);
+      return {
+        success: true,
+        format: ext,
+        path: filePath,
+        size,
+        sheetName,
+        sheetNames,
+        columns,
+        rowCount,
+        data: rows,
+        truncated,
+      };
+    }
+
     const text = buffer.toString('utf-8');
 
     if (ext === 'json') {
