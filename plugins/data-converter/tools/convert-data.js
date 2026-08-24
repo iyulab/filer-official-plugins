@@ -115,7 +115,12 @@ module.exports = async function handler(params, ctx) {
     return { success: false, error: `Failed to parse source file: ${e.message}` }
   }
 
-  const outputBuffer = serializeTarget(rows, columns, targetFormat)
+  let outputBuffer
+  try {
+    outputBuffer = serializeTarget(rows, columns, targetFormat)
+  } catch (e) {
+    return { success: false, error: `Failed to serialize output: ${e.message}` }
+  }
 
   try {
     await ctx.fs.write(outputPath, outputBuffer)
