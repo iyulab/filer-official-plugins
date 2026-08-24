@@ -117,27 +117,54 @@ export default async function(params, ctx) {
 
 ## Hooks
 
-Hooks respond to system events:
+Hooks respond to system events. A handler is called as `(event, ctx)` — `event`'s shape depends on
+which event fired (see below); it is passed through unmodified, so check its actual fields rather
+than assuming a shape.
 
 ```json
 "hooks": {
-  "onAgentExecutionCompleted": "./hooks/on-complete.js",
-  "onFileChanged": "./hooks/on-file-changed.js",
+  "onAgentComplete": "./hooks/on-complete.js",
+  "onFileChange": "./hooks/on-file-change.js",
   "onAppReady": "./hooks/on-ready.js"
 }
 ```
 
-Available events:
-- `onAppReady` — App started
-- `onFileChanged` — Watched files changed
-- `onAgentExecutionCompleted` — Agent finished
-- `onAgentExecutionFailed` — Agent failed
-- `onSessionCreated` — Chat session created
-- `onSessionEnded` — Chat session ended
-- `onVaultChanged` — Vault content changed
-- `onSettingsChanged` — Settings changed
-- `onPluginInstalled` — Plugin installed
-- `onPluginUninstalled` — Plugin uninstalled
+Available events and their current payload shape (source: `PluginEventType` in
+`src/ui/src/main/plugins/plugin-event-bus.ts`, and each event's actual emission call site):
+
+- `onAppReady` — App started. `{}`
+- `onSessionStart` — A session (chat panel or working-agent trigger) started. `{ sessionId, channelId }`
+- `onSessionEnd` — declared in the type union but **not currently emitted from anywhere** — a handler
+  registered for it will never run.
+- `onAgentComplete` — A turn/agent execution finished, for both a UI-chat-panel session and a
+  host-triggered (file/schedule/inbound) execution. `{ sessionId, channelId, result, duration }` —
+  `result` is the turn's final answer text as a **plain string**, or `null` for a UI-chat-panel
+  session (that path streams its result to the renderer directly instead of through this event).
+  `duration` is milliseconds (`0` for the UI-chat-panel path).
+- `onToolCall` — A tool call completed during a turn. `{ toolId, params, result, success }`
+- `onFileChange` — A watched file changed; supports an `extensions` hook filter. `{ path }`
+- `onFileMemorized` — A file was added to the vault. `{ path }`
+- `onActionCreated` — declared in the type union but **not currently emitted from anywhere**.
+- `onPluginSettingsChanged` — One of your plugin's own settings changed via the UI.
+  `{ key, oldValue, newValue }`
+- `onFileChangeNotify` — A working-agent's folder-watch trigger fired (used for messenger-relay
+  integrations, not the general file-change hook above).
+  `{ agentId, channelId, folderPath, folderDisplayName, changes, summary, isDigest }`
+- `onSessionMessage` — Fires alongside `onAgentComplete` (when the session has both a `sessionId` and
+  a `channelId`) specifically for plugins that relay a turn's result to an external channel (see
+  `telegram/hooks/on-session-message.js`). `{ sessionId, channelId, result? }` — for a host-triggered
+  execution, `result` carries the final answer text directly (`typeof event.result === 'string'`); a
+  UI-chat-panel session omits `result` entirely, so a handler needs its own lookup (e.g. the
+  `/api/sessions/{id}/history` endpoint) in that case.
+- `onChannelChanged` — A channel was registered/unregistered for a folder.
+  `{ channelId, path, action: 'registered' | 'unregistered' }`
+- `onAgentHitlRequest` — A HITL approval request was raised for an agent action.
+  `{ agentId, executionId, requestId, action, target, description, channelId }`
+
+**A mistake worth naming explicitly, since three of this repo's own bundled plugins shipped it**:
+`result` above is always a plain `string` or `null`, **never** an object — `event.result?.summary`
+silently evaluates to `undefined` rather than erroring, so the bug doesn't announce itself. Read
+`event.result` directly.
 
 ## When Conditions
 
