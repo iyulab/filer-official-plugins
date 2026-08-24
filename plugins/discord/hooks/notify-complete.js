@@ -15,7 +15,7 @@ export default async function(event, ctx) {
 
   const username = await ctx.settings.get('discord.username') || 'Filer';
   const duration = event.duration ? `${Math.round(event.duration / 1000)}s` : 'unknown';
-  const summary = event.result?.summary || 'Task completed';
+  const summary = typeof event.result === 'string' && event.result ? event.result : 'Task completed';
 
   try {
     await ctx.fetch(webhookUrl, {

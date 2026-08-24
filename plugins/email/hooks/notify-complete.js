@@ -7,7 +7,7 @@ export default async function(event, ctx) {
   if (!fromAddress || !toAddress) return;
 
   const duration = event.duration ? `${Math.round(event.duration / 1000)}s` : 'unknown';
-  const summary = event.result?.summary || 'Task completed';
+  const summary = typeof event.result === 'string' && event.result ? event.result : 'Task completed';
 
   try {
     const provider = await ctx.settings.get('email.provider') || 'smtp';

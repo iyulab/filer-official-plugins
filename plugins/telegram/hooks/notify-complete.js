@@ -10,10 +10,10 @@ module.exports = async function onAgentComplete(event, ctx) {
   if (!chatId) return;
 
   const channelId = event.channelId || 'default';
-  const duration = event.result?.durationMs
-    ? `${(event.result.durationMs / 1000).toFixed(1)}s`
-    : 'unknown';
-  const summary = event.result?.summary || 'No summary available';
+  const duration = event.duration ? `${(event.duration / 1000).toFixed(1)}s` : 'unknown';
+  const summary = typeof event.result === 'string' && event.result
+    ? event.result
+    : 'No summary available';
   const text = `✅ Agent completed (${duration})\n\n${summary}`;
 
   const payload = { chat_id: chatId, text, parse_mode: 'Markdown' };
