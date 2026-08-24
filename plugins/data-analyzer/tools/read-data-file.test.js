@@ -68,6 +68,22 @@ test('read_data_file truncates .xlsx rows past maxRows', async () => {
   });
 });
 
+test('read_data_file returns Excel date cells as Date values, not raw serial numbers', async () => {
+  await withTempDir(async dir => {
+    const workbook = XLSX.utils.book_new();
+    const sheet = XLSX.utils.json_to_sheet([{ name: 'Alice', dueDate: new Date(Date.UTC(2025, 0, 15)) }]);
+    XLSX.utils.book_append_sheet(workbook, sheet, 'Sheet1');
+    const filePath = path.join(dir, 'dated.xlsx');
+    XLSX.writeFile(workbook, filePath);
+
+    const result = await handler({ path: filePath }, fsCtx());
+
+    assert.equal(result.success, true);
+    assert.ok(result.data[0].dueDate instanceof Date, 'expected a Date instance, not a raw serial number');
+    assert.equal(result.data[0].dueDate.toISOString().slice(0, 10), '2025-01-15');
+  });
+});
+
 test('read_data_file still parses .csv unaffected by the xlsx branch', async () => {
   await withTempDir(async dir => {
     const filePath = path.join(dir, 'sample.csv');
