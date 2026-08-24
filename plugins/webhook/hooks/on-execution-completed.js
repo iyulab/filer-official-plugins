@@ -6,10 +6,10 @@ export default async function(event, ctx) {
     await ctx.execute('webhook.webhook_send', {
       event: 'agent.execution.completed',
       payload: {
-        agentName: event.agentName,
-        status: event.status,
-        durationMs: event.durationMs,
-        tokensUsed: event.tokensUsed,
+        sessionId: event.sessionId,
+        channelId: event.channelId,
+        result: event.result,
+        durationMs: event.duration,
       },
     });
   } catch (err) {

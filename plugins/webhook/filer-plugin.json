@@ -71,8 +71,8 @@
       }
     ],
     "hooks": {
-      "onAgentExecutionCompleted": "./hooks/on-execution-completed.js",
-      "onFileChanged": "./hooks/on-file-changed.js"
+      "onAgentComplete": "./hooks/on-execution-completed.js",
+      "onFileChangeNotify": "./hooks/on-file-changed.js"
     }
   }
 }

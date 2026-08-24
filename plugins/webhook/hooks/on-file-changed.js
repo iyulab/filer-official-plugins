@@ -6,8 +6,9 @@ export default async function(event, ctx) {
     await ctx.execute('webhook.webhook_send', {
       event: 'file.changed',
       payload: {
-        files: event.files,
         agentId: event.agentId,
+        folderPath: event.folderPath,
+        changes: event.changes,
       },
     });
   } catch (err) {

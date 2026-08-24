@@ -13,8 +13,9 @@ export default async function(event, ctx) {
   if (!webhookUrl) webhookUrl = await ctx.settings.get('slack.webhookUrl');
   if (!webhookUrl) return;
 
-  const status = event.status === 'Completed' ? ':white_check_mark:' : ':x:';
-  const text = `${status} Agent execution ${event.status.toLowerCase()}: *${event.agentName || 'Unknown'}* (${event.durationMs ? Math.round(event.durationMs / 1000) + 's' : 'N/A'})`;
+  const duration = event.duration ? `${Math.round(event.duration / 1000)}s` : 'unknown';
+  const summary = typeof event.result === 'string' && event.result ? event.result : 'Task completed';
+  const text = `:white_check_mark: Agent completed (${duration})\n\n${summary}`;
 
   await ctx.fetch(webhookUrl, {
     method: 'POST',
