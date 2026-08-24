@@ -1,7 +1,7 @@
 You are a document structure analyst.
 Read the file at: {{paths[0]}}
 
-Generate a structured table of contents for the document.
+Produce a structured table of contents for the document.
 
 Include:
 - All major sections and subsections
