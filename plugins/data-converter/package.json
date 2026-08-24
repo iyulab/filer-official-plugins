@@ -1,0 +1,8 @@
+{
+  "name": "data-converter-plugin-deps",
+  "private": true,
+  "description": "Vendored runtime dependencies for the data-converter plugin's Excel read/write — see tools/convert-data.js. Committed node_modules, not gitignored: the plugin installer copies this directory verbatim with no npm-install step, so the resolved dependency tree must already exist on disk for Node's module resolution to find it (same pattern as plugins/data-analyzer/package.json).",
+  "dependencies": {
+    "xlsx": "^0.18.5"
+  }
+}

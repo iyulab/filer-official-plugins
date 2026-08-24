@@ -1,0 +1,63 @@
+{
+  "name": "data-converter",
+  "displayName": "Data Converter",
+  "version": "0.1.0",
+  "description": "Convert CSV, JSON, and Excel data files to another of those formats",
+  "author": { "name": "iyulab", "url": "https://github.com/iyulab" },
+  "repository": "https://github.com/iyulab/filer-official-plugins",
+  "license": "MIT",
+  "keywords": ["convert", "csv", "json", "excel", "xlsx", "data"],
+  "category": "data",
+  "runtime": "node",
+  "engines": { "filer": ">=0.2.0" },
+  "bundled": false,
+  "capabilities": ["convert-data"],
+  "permissions": {
+    "fs": {
+      "read": {
+        "parameter": true,
+        "deny": ["**/.env", "**/.env.*", "**/.ssh/**", "**/*.pem", "**/*.key"]
+      },
+      "write": {
+        "parameter": true,
+        "deny": ["**/.env", "**/.env.*", "**/.ssh/**", "**/*.pem", "**/*.key"]
+      }
+    }
+  },
+  "contributes": {
+    "tools": [
+      {
+        "id": "convert_data",
+        "title": "Convert Data File",
+        "description": "Convert a CSV, JSON, or Excel data file to another of those formats. Requires path, targetFormat, and outputPath. Refuses to overwrite an existing file at outputPath.",
+        "schema": "./tools/convert-data.schema.json",
+        "handler": "./tools/convert-data.js"
+      }
+    ],
+    "actions": [
+      {
+        "id": "convert",
+        "title": "Convert to...",
+        "description": "Convert this data file to CSV, JSON, or Excel",
+        "kind": "tool",
+        "toolId": "convert_data",
+        "scope": "single-file",
+        "fileTypes": ["data"],
+        "fileExtensions": [".csv", ".json", ".xlsx"],
+        "params": [
+          {
+            "id": "targetFormat",
+            "label": "Format",
+            "type": "select",
+            "options": [
+              { "value": "csv", "label": "CSV" },
+              { "value": "json", "label": "JSON" },
+              { "value": "xlsx", "label": "Excel (.xlsx)" }
+            ],
+            "default": "csv"
+          }
+        ]
+      }
+    ]
+  }
+}

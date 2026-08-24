@@ -94,6 +94,14 @@
       "tags": ["data", "csv", "json", "excel", "analytics", "schema"]
     },
     {
+      "name": "data-converter",
+      "source": "./plugins/data-converter",
+      "description": "Convert CSV, JSON, and Excel data files to another format",
+      "version": "0.1.0",
+      "category": "data",
+      "tags": ["convert", "csv", "json", "excel", "xlsx", "data"]
+    },
+    {
       "name": "image-describer",
       "source": "./plugins/image-describer",
       "description": "Describe image content and extract text from images using AI vision",
