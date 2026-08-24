@@ -1,8 +1,19 @@
 const XLSX = require('xlsx');
 
-function parseExcel(buffer, maxRows) {
+function resolveSheetName(sheetNames, requested) {
+  if (!requested) return sheetNames[0];
+  if (sheetNames.includes(requested)) return requested;
+  const lower = requested.toLowerCase();
+  return sheetNames.find(name => name.toLowerCase() === lower) ?? null;
+}
+
+function parseExcel(buffer, maxRows, requestedSheet) {
   const workbook = XLSX.read(buffer, { type: 'buffer', cellDates: true });
-  const sheetName = workbook.SheetNames[0];
+  const sheetName = resolveSheetName(workbook.SheetNames, requestedSheet);
+  if (sheetName === null) {
+    return { error: `Sheet "${requestedSheet}" not found. Available sheets: ${workbook.SheetNames.join(', ')}` };
+  }
+
   const sheet = workbook.Sheets[sheetName];
   const rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
   const columns = rows.length > 0 ? Object.keys(rows[0]) : [];
@@ -62,7 +73,9 @@ module.exports = async function handler(params, ctx) {
     const size = buffer.length;
 
     if (ext === 'xlsx' || ext === 'xls') {
-      const { sheetName, sheetNames, columns, rows, rowCount, truncated } = parseExcel(buffer, maxRows);
+      const parsed = parseExcel(buffer, maxRows, params.sheet);
+      if (parsed.error) return { success: false, error: parsed.error, path: filePath };
+      const { sheetName, sheetNames, columns, rows, rowCount, truncated } = parsed;
       return {
         success: true,
         format: ext,

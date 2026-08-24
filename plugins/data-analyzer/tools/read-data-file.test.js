@@ -51,6 +51,51 @@ test('read_data_file parses .xlsx into rows/columns from the first sheet', async
   });
 });
 
+test('read_data_file reads a non-first sheet when the sheet parameter is given', async () => {
+  await withTempDir(async dir => {
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet([{ name: 'Alice' }]), 'Invoices');
+    XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet([{ note: 'important' }]), 'Notes');
+    const filePath = path.join(dir, 'invoices.xlsx');
+    XLSX.writeFile(workbook, filePath);
+
+    const result = await handler({ path: filePath, sheet: 'Notes' }, fsCtx());
+
+    assert.equal(result.success, true);
+    assert.equal(result.sheetName, 'Notes');
+    assert.deepEqual(result.data, [{ note: 'important' }]);
+  });
+});
+
+test('read_data_file matches a requested sheet name case-insensitively', async () => {
+  await withTempDir(async dir => {
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet([{ note: 'important' }]), 'Notes');
+    const filePath = path.join(dir, 'sheet.xlsx');
+    XLSX.writeFile(workbook, filePath);
+
+    const result = await handler({ path: filePath, sheet: 'notes' }, fsCtx());
+
+    assert.equal(result.success, true);
+    assert.equal(result.sheetName, 'Notes');
+  });
+});
+
+test('read_data_file reports available sheet names when the requested sheet does not exist', async () => {
+  await withTempDir(async dir => {
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, XLSX.utils.json_to_sheet([{ name: 'Alice' }]), 'Invoices');
+    const filePath = path.join(dir, 'invoices.xlsx');
+    XLSX.writeFile(workbook, filePath);
+
+    const result = await handler({ path: filePath, sheet: 'DoesNotExist' }, fsCtx());
+
+    assert.equal(result.success, false);
+    assert.match(result.error, /DoesNotExist/);
+    assert.match(result.error, /Invoices/);
+  });
+});
+
 test('read_data_file truncates .xlsx rows past maxRows', async () => {
   await withTempDir(async dir => {
     const rows = Array.from({ length: 5 }, (_, i) => ({ id: i }));
