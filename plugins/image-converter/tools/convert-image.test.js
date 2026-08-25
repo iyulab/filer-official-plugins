@@ -145,6 +145,20 @@ test('convert_image rejects converting to the same format', async () => {
   })
 })
 
+test('convert_image reports a clear error for a corrupt source file, not a crash', async () => {
+  await withTempDir(async (dir) => {
+    const sourcePath = path.join(dir, 'corrupt.png')
+    fs.writeFileSync(sourcePath, 'this is not actually a png file')
+    const outputPath = path.join(dir, 'out.webp')
+
+    const result = await handler({ path: sourcePath, targetFormat: 'webp', outputPath }, fsCtx())
+
+    assert.equal(result.success, false)
+    assert.match(result.error, /Failed to decode source image/)
+    assert.ok(!fs.existsSync(outputPath), 'no partial output file should be written on decode failure')
+  })
+})
+
 test('convert_image requires path, targetFormat, and outputPath', async () => {
   const result = await handler({ path: 'x.png' }, fsCtx())
   assert.equal(result.success, false)
