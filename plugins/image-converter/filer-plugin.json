@@ -1,0 +1,65 @@
+{
+  "name": "image-converter",
+  "displayName": "Image Converter",
+  "version": "0.1.0",
+  "description": "Convert PNG, JPEG, WebP, GIF, and BMP images to another of those formats",
+  "author": { "name": "iyulab", "url": "https://github.com/iyulab" },
+  "repository": "https://github.com/iyulab/filer-official-plugins",
+  "license": "MIT",
+  "keywords": ["convert", "image", "png", "jpg", "jpeg", "webp", "gif", "bmp"],
+  "category": "media",
+  "runtime": "node",
+  "engines": { "filer": ">=0.2.0" },
+  "bundled": false,
+  "capabilities": ["convert-image"],
+  "permissions": {
+    "fs": {
+      "read": {
+        "parameter": true,
+        "deny": ["**/.env", "**/.env.*", "**/.ssh/**", "**/*.pem", "**/*.key"]
+      },
+      "write": {
+        "parameter": true,
+        "deny": ["**/.env", "**/.env.*", "**/.ssh/**", "**/*.pem", "**/*.key"]
+      }
+    }
+  },
+  "contributes": {
+    "tools": [
+      {
+        "id": "convert_image",
+        "title": "Convert Image File",
+        "description": "Convert a PNG, JPEG, WebP, GIF, or BMP image to another of those formats. Requires path, targetFormat, and outputPath. Refuses to overwrite an existing file at outputPath. SVG sources are rejected (vector format, not supported).",
+        "schema": "./tools/convert-image.schema.json",
+        "handler": "./tools/convert-image.js"
+      }
+    ],
+    "actions": [
+      {
+        "id": "convert",
+        "title": "Convert to...",
+        "description": "Convert this image to PNG, JPEG, WebP, GIF, or BMP",
+        "kind": "tool",
+        "toolId": "convert_image",
+        "scope": "single-file",
+        "fileTypes": ["image"],
+        "fileExtensions": [".png", ".jpg", ".jpeg", ".webp", ".gif", ".bmp"],
+        "params": [
+          {
+            "id": "targetFormat",
+            "label": "Format",
+            "type": "select",
+            "options": [
+              { "value": "png", "label": "PNG" },
+              { "value": "jpg", "label": "JPEG" },
+              { "value": "webp", "label": "WebP" },
+              { "value": "gif", "label": "GIF" },
+              { "value": "bmp", "label": "BMP" }
+            ],
+            "default": "png"
+          }
+        ]
+      }
+    ]
+  }
+}

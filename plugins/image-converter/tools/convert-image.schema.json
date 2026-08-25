@@ -1,0 +1,21 @@
+{
+  "type": "object",
+  "properties": {
+    "path": {
+      "type": "string",
+      "format": "file-path",
+      "description": "Source image file (.png, .jpg, .jpeg, .webp, .gif, .bmp)"
+    },
+    "targetFormat": {
+      "type": "string",
+      "enum": ["png", "jpg", "webp", "gif", "bmp"],
+      "description": "Format to convert to"
+    },
+    "outputPath": {
+      "type": "string",
+      "format": "file-path",
+      "description": "Where to write the converted file. Must not already exist — pick a path that does not collide with an existing file, e.g. the source's directory with the extension swapped."
+    }
+  },
+  "required": ["path", "targetFormat", "outputPath"]
+}

@@ -102,6 +102,14 @@
       "tags": ["convert", "csv", "json", "excel", "xlsx", "data"]
     },
     {
+      "name": "image-converter",
+      "source": "./plugins/image-converter",
+      "description": "Convert PNG, JPEG, WebP, GIF, and BMP images to another format",
+      "version": "0.1.0",
+      "category": "media",
+      "tags": ["convert", "image", "png", "jpg", "jpeg", "webp", "gif", "bmp"]
+    },
+    {
       "name": "image-describer",
       "source": "./plugins/image-describer",
       "description": "Describe image content and extract text from images using AI vision",
