@@ -55,7 +55,10 @@ async function resolveTopicId(ctx, botToken, chatId, channelId) {
     const topicId = resp.result.message_thread_id;
     await ctx.channels.setIntegrationConfig(channelId, 'telegram', { topicId });
     return topicId;
-  } catch {
+  } catch (e) {
+    ctx.log.warn(
+      `Failed to create Telegram topic for channel=${channelId}, falling back to default: ${e.message}`
+    );
     return null;
   }
 }

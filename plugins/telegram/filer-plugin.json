@@ -87,6 +87,12 @@
         "type": "boolean",
         "default": false,
         "description": "Enable inbound message polling from Telegram"
+      },
+      "telegram.setupMultiFolder": {
+        "type": "info",
+        "title": "Connecting Multiple Folders (Optional)",
+        "description": "If you only connect one Filer folder to Telegram, skip this — the setup above is enough.\n\nTo connect more than one folder, each one needs its own conversation thread, which Telegram provides via Topics inside a group (not a 1:1 bot chat):\n1. Create a new Telegram group and add your bot to it.\n2. Open the group's settings and turn on \"Topics\".\n3. In the group's Administrators settings, promote your bot to admin and make sure \"Manage Topics\" is enabled for it — Filer needs this to create a topic per folder.\n4. Send any message in the group (so Telegram registers it), then click \"Fetch Chat ID\" above again — it should now find the group instead of your personal chat. A group's Chat ID is a negative number; if you see a positive number, \"Fetch Chat ID\" is still pointed at your personal DM with the bot.\n5. Connect each folder you want to Telegram — Filer creates a matching topic automatically the first time that folder sends a message.",
+        "order": 7
       }
     },
     "tools": [
