@@ -116,6 +116,14 @@
       "version": "0.1.0",
       "category": "media",
       "tags": ["image", "ocr", "description", "png", "jpg", "visual"]
+    },
+    {
+      "name": "document-converter",
+      "source": "./plugins/document-converter",
+      "description": "Convert Word documents, Markdown, HTML, and plain text to PDF, HTML, Markdown, or plain text",
+      "version": "0.1.0",
+      "category": "document",
+      "tags": ["convert", "document", "docx", "word", "pdf", "markdown", "md", "html", "txt"]
     }
   ]
 }

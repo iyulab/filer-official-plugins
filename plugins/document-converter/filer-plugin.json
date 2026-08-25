@@ -1,0 +1,65 @@
+{
+  "name": "document-converter",
+  "displayName": "Document Converter",
+  "version": "0.1.0",
+  "description": "Convert Word documents, Markdown, HTML, and plain text to PDF, HTML, Markdown, or plain text",
+  "author": { "name": "iyulab", "url": "https://github.com/iyulab" },
+  "repository": "https://github.com/iyulab/filer-official-plugins",
+  "license": "MIT",
+  "keywords": ["convert", "document", "docx", "word", "pdf", "markdown", "md", "html", "txt"],
+  "category": "document",
+  "runtime": "node",
+  "engines": { "filer": ">=0.2.0" },
+  "bundled": false,
+  "capabilities": ["convert-document"],
+  "permissions": {
+    "fs": {
+      "read": {
+        "parameter": true,
+        "deny": ["**/.env", "**/.env.*", "**/.ssh/**", "**/*.pem", "**/*.key"]
+      },
+      "write": {
+        "parameter": true,
+        "deny": ["**/.env", "**/.env.*", "**/.ssh/**", "**/*.pem", "**/*.key"]
+      }
+    },
+    "renderHtmlToPdf": true
+  },
+  "contributes": {
+    "tools": [
+      {
+        "id": "convert_document",
+        "title": "Convert Document File",
+        "description": "Convert a Word document (.docx), Markdown (.md), HTML (.html), or plain text (.txt) file to PDF, HTML, Markdown, or plain text. Requires path, targetFormat, and outputPath. Refuses to overwrite an existing file at outputPath. PDF is an output-only format (no PDF source support).",
+        "schema": "./tools/convert-document.schema.json",
+        "handler": "./tools/convert-document.js"
+      }
+    ],
+    "actions": [
+      {
+        "id": "convert",
+        "title": "Convert to...",
+        "description": "Convert this document to PDF, HTML, Markdown, or plain text",
+        "kind": "tool",
+        "toolId": "convert_document",
+        "scope": "single-file",
+        "fileTypes": ["document"],
+        "fileExtensions": [".docx", ".md", ".html", ".txt"],
+        "params": [
+          {
+            "id": "targetFormat",
+            "label": "Format",
+            "type": "select",
+            "options": [
+              { "value": "pdf", "label": "PDF" },
+              { "value": "html", "label": "HTML" },
+              { "value": "md", "label": "Markdown" },
+              { "value": "txt", "label": "Plain Text" }
+            ],
+            "default": "pdf"
+          }
+        ]
+      }
+    ]
+  }
+}
