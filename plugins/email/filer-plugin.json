@@ -136,6 +136,16 @@
         "handler": "./tools/send-email.js"
       }
     ],
+    "actions": [
+      {
+        "id": "share-via-email",
+        "title": "Share via Email",
+        "description": "Email this file's content to the default recipient",
+        "scope": "single-file",
+        "fileTypes": ["document"],
+        "prompt": "./prompts/share-via-email.md"
+      }
+    ],
     "hooks": {
       "onAppReady": "./hooks/initialize.js",
       "onAgentComplete": "./hooks/notify-complete.js",

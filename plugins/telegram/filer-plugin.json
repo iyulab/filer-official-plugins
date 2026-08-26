@@ -111,6 +111,16 @@
         "handler": "./tools/send-file.js"
       }
     ],
+    "actions": [
+      {
+        "id": "share-via-telegram",
+        "title": "Share via Telegram",
+        "description": "Send a text summary of this file's content to the default Telegram chat",
+        "scope": "single-file",
+        "fileTypes": ["document"],
+        "prompt": "./prompts/share-via-telegram.md"
+      }
+    ],
     "commands": [
       {
         "id": "telegram.sendFile",

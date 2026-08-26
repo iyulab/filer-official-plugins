@@ -62,6 +62,16 @@
         "schema": "./tools/append-block.schema.json",
         "handler": "./tools/append-block.js"
       }
+    ],
+    "actions": [
+      {
+        "id": "save-to-notion",
+        "title": "Save to Notion",
+        "description": "Save this file's content as a new Notion page in the default database",
+        "scope": "single-file",
+        "fileTypes": ["document"],
+        "prompt": "./prompts/save-to-notion.md"
+      }
     ]
   }
 }
