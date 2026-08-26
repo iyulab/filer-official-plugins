@@ -41,7 +41,7 @@
         "description": "Convert this image to PNG, JPEG, WebP, GIF, or BMP",
         "kind": "tool",
         "toolId": "convert_image",
-        "scope": "single-file",
+        "scope": ["single-file", "multi-file"],
         "fileTypes": ["image"],
         "fileExtensions": [".png", ".jpg", ".jpeg", ".webp", ".gif", ".bmp"],
         "params": [

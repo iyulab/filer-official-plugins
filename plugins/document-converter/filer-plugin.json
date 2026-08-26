@@ -42,7 +42,7 @@
         "description": "Convert this document to PDF, HTML, Markdown, or plain text",
         "kind": "tool",
         "toolId": "convert_document",
-        "scope": "single-file",
+        "scope": ["single-file", "multi-file"],
         "fileTypes": ["document"],
         "fileExtensions": [".docx", ".md", ".html", ".txt"],
         "params": [
