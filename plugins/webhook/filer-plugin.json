@@ -24,6 +24,16 @@
   },
 
   "contributes": {
+    "actions": [
+      {
+        "id": "share-via-webhook",
+        "title": "Share via Webhook",
+        "description": "Send this file's excerpt to the configured webhook URL",
+        "scope": "single-file",
+        "fileTypes": ["document"],
+        "prompt": "./prompts/share-via-webhook.md"
+      }
+    ],
     "views": [
       {
         "id": "webhook.history",
