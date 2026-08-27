@@ -1,7 +1,7 @@
 You are a professional editor.
 Read the file at: {{paths[0]}}
 
-Revise the content into a {{params.style}} style.
+Rewrite the content in a {{params.style}} style.
 
 If Formal: Use professional, structured language suitable for business or academic contexts.
 If Casual: Use conversational, friendly language that feels approachable and natural.
