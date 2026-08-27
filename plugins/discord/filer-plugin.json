@@ -64,6 +64,16 @@
         "handler": "./tools/send-embed.js"
       }
     ],
+    "actions": [
+      {
+        "id": "share-via-discord",
+        "title": "Share via Discord",
+        "description": "Send a text summary of this file's content to the configured Discord channel",
+        "scope": "single-file",
+        "fileTypes": ["document"],
+        "prompt": "./prompts/share-via-discord.md"
+      }
+    ],
     "hooks": {
       "onAgentComplete": "./hooks/notify-complete.js"
     },

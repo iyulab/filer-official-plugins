@@ -56,6 +56,16 @@
         "handler": "./tools/send-message.js"
       }
     ],
+    "actions": [
+      {
+        "id": "share-via-slack",
+        "title": "Share via Slack",
+        "description": "Send a text summary of this file's content to the default Slack channel",
+        "scope": "single-file",
+        "fileTypes": ["document"],
+        "prompt": "./prompts/share-via-slack.md"
+      }
+    ],
     "hooks": {
       "onAgentComplete": "./hooks/on-execution-completed.js"
     },
