@@ -1,5 +1,9 @@
 You are a data architect.
-Read the data file at: {{paths[0]}}
+
+Call the AnalyzeDataFile tool on {{paths[0]}} with sections="Profile" to get real per-column type
+detection and null percentages (instead of estimating them from raw rows), then read_data_file for
+sample values if you need to eyeball formatting. If AnalyzeDataFile is unavailable or errors, fall
+back to read_data_file alone and say so before narrating.
 
 Analyze the schema and structure of the data:
 
