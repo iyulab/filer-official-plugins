@@ -132,19 +132,18 @@ async function handleUpdate(ctx, botToken, update) {
   // /api/sessions → /chat path if the new endpoint returns 404
   // (older host versions) to keep the plugin backward-compatible
   // during rollout.
+  //
+  // HD-91: ctx.triggerInbound, not ctx.fetch — this always targets the host's own
+  // localhost origin, which ctx.fetch's SSRF deny-list unconditionally blocks.
   const hostUrl = process.env.FILER_HOST_URL || 'http://localhost:5100';
   const messageId = `telegram-${update.update_id}`;
 
   try {
-    const resp = await ctx.fetch(`${hostUrl}/api/triggers/inbound`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        channel_id: channelId,
-        source_plugin: 'telegram',
-        message_id: messageId,
-        content: text,
-      }),
+    const resp = await ctx.triggerInbound({
+      channelId,
+      sourcePlugin: 'telegram',
+      messageId,
+      content: text,
     });
 
     if (resp.status === 202) {
@@ -227,12 +226,10 @@ async function handleCallbackQuery(ctx, botToken, callbackQuery) {
   await ctx.store.delete(`hitl:${shortKey}`);
 
   try {
-    const hostUrl = process.env.FILER_HOST_URL || 'http://localhost:5100';
-    await ctx.fetch(`${hostUrl}/api/agents/${mapping.agentId}/hitl/${mapping.requestId}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ approved, reason }),
-    });
+    // HD-91: ctx.respondToHitl, not ctx.fetch — this always targets the host's own
+    // localhost origin, which ctx.fetch's SSRF deny-list unconditionally blocks (every
+    // Telegram HITL approve/deny silently failed this call before this fix).
+    await ctx.respondToHitl(mapping.agentId, mapping.requestId, approved, reason);
 
     await telegramApi(botToken, 'answerCallbackQuery', {
       callback_query_id: callbackQuery.id,
@@ -260,4 +257,6 @@ function sleep(ms, signal) {
   });
 }
 
-module.exports = { start, stop };
+// handleUpdate/handleCallbackQuery exported for unit testing only (HD-91) — start/stop remain
+// the real public API.
+module.exports = { start, stop, handleUpdate, handleCallbackQuery };

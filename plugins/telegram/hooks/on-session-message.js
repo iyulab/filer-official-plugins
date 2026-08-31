@@ -19,8 +19,9 @@ module.exports = async function onSessionMessage(event, ctx) {
     let text = typeof event.result === 'string' ? event.result : null;
 
     if (!text) {
-      const hostUrl = process.env.FILER_HOST_URL || 'http://localhost:5100';
-      const resp = await ctx.fetch(`${hostUrl}/api/sessions/${event.sessionId}/history`).then(r => r.json());
+      // HD-91: ctx.getSessionHistory, not ctx.fetch — this always targets the host's own
+      // localhost origin, which ctx.fetch's SSRF deny-list unconditionally blocks.
+      const resp = await ctx.getSessionHistory(event.sessionId);
       if (!resp || !Array.isArray(resp)) return;
 
       const lastAssistant = [...resp].reverse().find(m => m.role === 'assistant');

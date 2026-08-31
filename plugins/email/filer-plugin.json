@@ -18,6 +18,7 @@
     },
     "settings": true,
     "channels": { "getIntegrationConfig": true },
+    "hostTrigger": true,
     "toast": true,
     "log": true,
     "store": true,

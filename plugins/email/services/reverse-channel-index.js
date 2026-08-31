@@ -84,8 +84,10 @@ function resolveFromIndex(idx, list, fromAddress) {
 async function build(ctx) {
   index.clear();
 
-  const hostUrl = process.env.FILER_HOST_URL || 'http://localhost:5100';
-  const channelList = await ctx.fetch(`${hostUrl}/api/channels`).then(r => r.json()).catch(() => []);
+  // HD-91: ctx.listChannels, not ctx.fetch — this always targets the host's own localhost
+  // origin, which ctx.fetch's SSRF deny-list unconditionally blocks (this call was silently
+  // returning [] on every real run before this fix).
+  const channelList = await ctx.listChannels().catch(() => []);
 
   for (const channel of channelList) {
     const config = await ctx.channels.getIntegrationConfig(channel.channelId, 'email');

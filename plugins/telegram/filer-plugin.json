@@ -26,6 +26,7 @@
     "settings": true,
     "session": { "getActive": true },
     "channels": { "getIntegrationConfig": true },
+    "hostTrigger": true,
     "toast": true,
     "log": true,
     "execution": { "timeout": "30s" }

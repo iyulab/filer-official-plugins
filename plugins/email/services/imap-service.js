@@ -343,17 +343,23 @@ async function handleMessage(ctx, message) {
   // CR-1 (Sprint 42): route through the unified /api/triggers/inbound
   // endpoint, same as telegram/services/polling-service.js — falls back to
   // the legacy /api/sessions -> /chat path if the new endpoint 404s.
+  //
+  // HD-91: ctx.triggerInbound, not ctx.fetch — this always targets the host's own
+  // localhost origin, which ctx.fetch's SSRF deny-list unconditionally blocks.
   try {
-    const resp = await ctx.fetch(`${hostUrl}/api/triggers/inbound`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        channel_id: channelId,
-        source_plugin: 'email',
-        message_id: messageId,
-        content,
-        ...(resolvedAttachments.length > 0 ? { attachments: resolvedAttachments } : {}),
-      }),
+    const resp = await ctx.triggerInbound({
+      channelId,
+      sourcePlugin: 'email',
+      messageId,
+      content,
+      ...(resolvedAttachments.length > 0
+        ? {
+            attachments: resolvedAttachments.map(a => ({
+              filename: a.filename,
+              contentBase64: a.content_base64,
+            })),
+          }
+        : {}),
     });
 
     if (resp.status === 202) {
