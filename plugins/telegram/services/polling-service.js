@@ -128,14 +128,10 @@ async function handleUpdate(ctx, botToken, update) {
   // CR-1 (Sprint 42): route through the unified /api/triggers/inbound
   // endpoint so the host can tag the agent run with
   // PipelineEventOrigin.Inbound and flow it through the same trigger
-  // model as file events. Falls back to the legacy
-  // /api/sessions → /chat path if the new endpoint returns 404
-  // (older host versions) to keep the plugin backward-compatible
-  // during rollout.
+  // model as file events.
   //
   // HD-91: ctx.triggerInbound, not ctx.fetch — this always targets the host's own
   // localhost origin, which ctx.fetch's SSRF deny-list unconditionally blocks.
-  const hostUrl = process.env.FILER_HOST_URL || 'http://localhost:5100';
   const messageId = `telegram-${update.update_id}`;
 
   try {
@@ -173,10 +169,11 @@ async function handleUpdate(ctx, botToken, update) {
         return;
       }
 
-      // Older host without /api/triggers/inbound — fall back to
-      // the legacy path. Logged once per update for observability.
-      ctx.log.warn('Host does not support /api/triggers/inbound — using legacy session path');
-      await routeViaLegacySessionPath(ctx, hostUrl, channelId, text);
+      // A bare 404 with no JSON error body means the host predates CR-1 and doesn't expose
+      // /api/triggers/inbound at all. There is no fallback for this — ui/host/ai ship together
+      // in this bundled deployment, so a pre-CR-1 host paired with this plugin build isn't a
+      // real deployment shape, only a defensive case. Log and drop.
+      ctx.log.warn('Host does not support /api/triggers/inbound (pre-CR-1 host) — dropping inbound message');
       return;
     }
 
@@ -188,35 +185,6 @@ async function handleUpdate(ctx, botToken, update) {
   } catch (err) {
     ctx.log.error('Failed to route inbound message:', err.message);
   }
-}
-
-/**
- * Legacy fallback: create a session for the channel and send the
- * message as a chat request. Used only when the host does not
- * expose /api/triggers/inbound (older versions before CR-1).
- * @param {object} ctx - PluginContext
- * @param {string} hostUrl - Host base URL
- * @param {string} channelId - Resolved Filer channel id
- * @param {string} text - Message content
- */
-async function routeViaLegacySessionPath(ctx, hostUrl, channelId, text) {
-  const sessResp = await ctx.fetch(`${hostUrl}/api/sessions`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ channel_id: channelId }),
-  }).then(r => r.json());
-
-  const sessionId = sessResp.session_id || sessResp.id;
-  if (!sessionId) {
-    ctx.log.error('Failed to create session for inbound message (legacy path)');
-    return;
-  }
-
-  await ctx.fetch(`${hostUrl}/api/sessions/${sessionId}/chat`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ content: text }),
-  });
 }
 
 /**

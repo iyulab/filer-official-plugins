@@ -112,22 +112,22 @@ test('handleUpdate treats a 404 with a JSON error body as a routing rejection, n
   assert.equal(ctx.calls.fetch.length, 0, 'must not fall through to the legacy ctx.fetch path');
 });
 
-// A genuinely missing endpoint (pre-CR-1 host) returns a bare 404 with no JSON error body —
-// this is the one case that legitimately falls back to the legacy session path.
-test('handleUpdate falls back to the legacy session path on a bare 404 with no JSON error body', async () => {
+// A genuinely missing endpoint (pre-CR-1 host) returns a bare 404 with no JSON error body.
+// There is no legacy fallback for this any more (routeViaLegacySessionPath removed — ui/host/ai
+// ship together in this bundled deployment, so a pre-CR-1 host isn't a real deployment shape) —
+// it just logs and drops.
+test('handleUpdate logs and drops on a bare 404 with no JSON error body, does not call ctx.fetch', async () => {
   const ctx = makeCtx({ triggerInboundResponse: new Response('Not Found', { status: 404 }) });
   await reverseIndex.build(ctx);
 
-  await handleUpdate(ctx, 'fake-token', {
-    update_id: 1003,
-    message: { chat: { id: 'chat-42' }, text: 'hi' },
-  });
+  await assert.doesNotReject(
+    handleUpdate(ctx, 'fake-token', {
+      update_id: 1003,
+      message: { chat: { id: 'chat-42' }, text: 'hi' },
+    }),
+  );
 
-  // The legacy fallback itself calls ctx.fetch(`${hostUrl}/api/sessions`, ...) — our ctx.fetch
-  // stub throws, which handleUpdate's outer try/catch swallows (logged, not re-thrown). Asserting
-  // it was *attempted* is enough to prove the branch chose the legacy path, not the rejection path.
-  assert.equal(ctx.calls.fetch.length, 1);
-  assert.match(ctx.calls.fetch[0][0], /\/api\/sessions$/);
+  assert.equal(ctx.calls.fetch.length, 0, 'must not attempt any fallback ctx.fetch call');
 });
 
 // HD-91 regression guard: an inline-keyboard HITL Approve/Deny tap must relay the decision via

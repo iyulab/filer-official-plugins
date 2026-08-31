@@ -337,12 +337,10 @@ async function handleMessage(ctx, message) {
         : '')
   );
 
-  const hostUrl = process.env.FILER_HOST_URL || 'http://localhost:5100';
   const messageId = message.envelope?.messageId || `email-${message.uid}`;
 
   // CR-1 (Sprint 42): route through the unified /api/triggers/inbound
-  // endpoint, same as telegram/services/polling-service.js — falls back to
-  // the legacy /api/sessions -> /chat path if the new endpoint 404s.
+  // endpoint, same as telegram/services/polling-service.js.
   //
   // HD-91: ctx.triggerInbound, not ctx.fetch — this always targets the host's own
   // localhost origin, which ctx.fetch's SSRF deny-list unconditionally blocks.
@@ -390,8 +388,11 @@ async function handleMessage(ctx, message) {
         return;
       }
 
-      ctx.log.warn('Host does not support /api/triggers/inbound — using legacy session path');
-      await routeViaLegacySessionPath(ctx, hostUrl, channelId, content);
+      // A bare 404 with no JSON error body means the host predates CR-1 and doesn't expose
+      // /api/triggers/inbound at all. There is no fallback for this — ui/host/ai ship together
+      // in this bundled deployment, so a pre-CR-1 host paired with this plugin build isn't a
+      // real deployment shape, only a defensive case. Log and drop.
+      ctx.log.warn('Host does not support /api/triggers/inbound (pre-CR-1 host) — dropping inbound email');
       return;
     }
 
@@ -400,34 +401,6 @@ async function handleMessage(ctx, message) {
   } catch (err) {
     ctx.log.error('Failed to route inbound email:', err.message);
   }
-}
-
-/**
- * Legacy fallback: create a session for the channel and send the message
- * content as a chat request. Only used when the host predates /api/triggers/inbound.
- * @param {object} ctx - PluginContext
- * @param {string} hostUrl
- * @param {string} channelId
- * @param {string} content
- */
-async function routeViaLegacySessionPath(ctx, hostUrl, channelId, content) {
-  const sessResp = await ctx.fetch(`${hostUrl}/api/sessions`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ channel_id: channelId }),
-  }).then(r => r.json());
-
-  const sessionId = sessResp.session_id || sessResp.id;
-  if (!sessionId) {
-    ctx.log.error('Failed to create session for inbound email (legacy path)');
-    return;
-  }
-
-  await ctx.fetch(`${hostUrl}/api/sessions/${sessionId}/chat`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ content }),
-  });
 }
 
 /**
