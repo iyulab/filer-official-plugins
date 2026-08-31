@@ -151,6 +151,28 @@ async function handleUpdate(ctx, botToken, update) {
     }
 
     if (resp.status === 404) {
+      // Two structurally different things return 404 here: a genuinely missing endpoint on a
+      // pre-CR-1 host (ASP.NET's default 404, no body shape to speak of) vs. a real routing
+      // rejection from a current host's /api/triggers/inbound (Results.NotFound(new
+      // {error: "..."}) for "channel not registered" / "no working agent bound to folder" — see
+      // TriggerEndpoints.cs). Falling back to the legacy path on a routing rejection would
+      // silently create an untagged, non-deduplicated session/chat turn instead of surfacing that
+      // the channel/agent isn't actually set up — losing origin tagging, which this project
+      // treats as an always-win invariant. Mirrors email/services/imap-service.js's own
+      // handleMessage, which already made this distinction.
+      const responseBody = await resp.text().catch(() => '');
+      let routingError;
+      try {
+        routingError = JSON.parse(responseBody)?.error;
+      } catch {
+        // not JSON — genuinely missing endpoint, fall through to legacy below
+      }
+
+      if (routingError) {
+        ctx.log.warn(`Inbound trigger rejected — routing problem, not a legacy-host case: ${routingError}`);
+        return;
+      }
+
       // Older host without /api/triggers/inbound — fall back to
       // the legacy path. Logged once per update for observability.
       ctx.log.warn('Host does not support /api/triggers/inbound — using legacy session path');

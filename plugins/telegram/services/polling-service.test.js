@@ -94,6 +94,42 @@ test('handleUpdate logs and does not throw when triggerInbound rejects the routi
   );
 });
 
+// cycle-647 follow-through: a 404 with a JSON `error` body is a real routing rejection (channel
+// not registered / no working agent bound), not a pre-CR-1 host — must NOT fall back to the
+// legacy session path (that would silently lose origin tagging). Mirrors imap-service.js's
+// already-correct handleMessage.
+test('handleUpdate treats a 404 with a JSON error body as a routing rejection, not a legacy-host fallback', async () => {
+  const ctx = makeCtx({
+    triggerInboundResponse: new Response(JSON.stringify({ error: "Channel 'x' is not registered" }), { status: 404 }),
+  });
+  await reverseIndex.build(ctx);
+
+  await handleUpdate(ctx, 'fake-token', {
+    update_id: 1002,
+    message: { chat: { id: 'chat-42' }, text: 'hi' },
+  });
+
+  assert.equal(ctx.calls.fetch.length, 0, 'must not fall through to the legacy ctx.fetch path');
+});
+
+// A genuinely missing endpoint (pre-CR-1 host) returns a bare 404 with no JSON error body —
+// this is the one case that legitimately falls back to the legacy session path.
+test('handleUpdate falls back to the legacy session path on a bare 404 with no JSON error body', async () => {
+  const ctx = makeCtx({ triggerInboundResponse: new Response('Not Found', { status: 404 }) });
+  await reverseIndex.build(ctx);
+
+  await handleUpdate(ctx, 'fake-token', {
+    update_id: 1003,
+    message: { chat: { id: 'chat-42' }, text: 'hi' },
+  });
+
+  // The legacy fallback itself calls ctx.fetch(`${hostUrl}/api/sessions`, ...) — our ctx.fetch
+  // stub throws, which handleUpdate's outer try/catch swallows (logged, not re-thrown). Asserting
+  // it was *attempted* is enough to prove the branch chose the legacy path, not the rejection path.
+  assert.equal(ctx.calls.fetch.length, 1);
+  assert.match(ctx.calls.fetch[0][0], /\/api\/sessions$/);
+});
+
 // HD-91 regression guard: an inline-keyboard HITL Approve/Deny tap must relay the decision via
 // ctx.respondToHitl, never ctx.fetch — before this fix, every Telegram HITL response silently
 // failed this call and reported "Error processing response" back to the user.

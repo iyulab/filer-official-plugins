@@ -438,4 +438,13 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-module.exports = { start, stop };
+// handleMessage exported for unit testing only (HD-91 follow-through, cycle-647) — start/stop
+// remain the real public API. _setClientForTesting injects a fake IMAP client so handleMessage's
+// downloadTextBody/downloadAttachment calls (which read the module-level `client`) are testable
+// without a real IMAP connection.
+module.exports = {
+  start,
+  stop,
+  handleMessage,
+  _setClientForTesting: (fakeClient) => { client = fakeClient; },
+};
