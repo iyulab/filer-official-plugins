@@ -1,0 +1,32 @@
+{
+  "type": "object",
+  "properties": {
+    "paths": {
+      "type": "array",
+      "description": "Source image files to combine, in frame order (2-20 of .png, .jpg, .jpeg, .webp, .bmp). All must be the same width and height.",
+      "items": {
+        "type": "string",
+        "format": "file-path"
+      },
+      "minItems": 2,
+      "maxItems": 20
+    },
+    "outputPath": {
+      "type": "string",
+      "format": "file-path",
+      "description": "Where to write the combined .gif file. Must not already exist."
+    },
+    "frameDelayMs": {
+      "type": "integer",
+      "description": "Milliseconds each frame is shown before advancing to the next. Defaults to 500.",
+      "default": 500,
+      "minimum": 10
+    },
+    "loop": {
+      "type": "boolean",
+      "description": "Whether the GIF loops forever (true) or plays once and stops (false). Defaults to true.",
+      "default": true
+    }
+  },
+  "required": ["paths", "outputPath"]
+}

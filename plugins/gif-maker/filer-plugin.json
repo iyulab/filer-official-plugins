@@ -1,0 +1,73 @@
+{
+  "name": "gif-maker",
+  "displayName": "GIF Maker",
+  "version": "0.1.0",
+  "description": "Combine several images into one animated GIF",
+  "author": { "name": "iyulab", "url": "https://github.com/iyulab" },
+  "repository": "https://github.com/iyulab/filer-official-plugins",
+  "license": "MIT",
+  "keywords": ["gif", "animation", "image", "combine", "convert"],
+  "category": "media",
+  "runtime": "node",
+  "engines": { "filer": ">=0.2.0" },
+  "bundled": false,
+  "capabilities": ["create-gif"],
+  "permissions": {
+    "fs": {
+      "read": {
+        "parameter": true,
+        "deny": ["**/.env", "**/.env.*", "**/.ssh/**", "**/*.pem", "**/*.key"]
+      },
+      "write": {
+        "parameter": true,
+        "deny": ["**/.env", "**/.env.*", "**/.ssh/**", "**/*.pem", "**/*.key"]
+      }
+    }
+  },
+  "contributes": {
+    "tools": [
+      {
+        "id": "create_gif",
+        "title": "Create GIF from Images",
+        "description": "Combine 2-20 PNG, JPEG, WebP, or BMP images (all the same size) into one animated GIF. Requires paths, outputPath. Optional frameDelayMs (default 500) and loop (default true). Refuses to overwrite an existing file at outputPath.",
+        "schema": "./tools/create-gif.schema.json",
+        "handler": "./tools/create-gif.js"
+      }
+    ],
+    "actions": [
+      {
+        "id": "create-gif",
+        "title": "Combine into GIF...",
+        "description": "Combine these images into one animated GIF, in the order selected",
+        "kind": "prompt",
+        "prompt": "./prompts/create-gif.md",
+        "scope": "multi-file",
+        "fileTypes": ["image"],
+        "fileExtensions": [".png", ".jpg", ".jpeg", ".webp", ".bmp"],
+        "params": [
+          {
+            "id": "frameDelayMs",
+            "label": "Speed",
+            "type": "select",
+            "options": [
+              { "value": "200", "label": "Fast (0.2s per frame)" },
+              { "value": "500", "label": "Normal (0.5s per frame)" },
+              { "value": "1000", "label": "Slow (1s per frame)" }
+            ],
+            "default": "500"
+          },
+          {
+            "id": "loop",
+            "label": "Loop",
+            "type": "select",
+            "options": [
+              { "value": "true", "label": "Loop forever" },
+              { "value": "false", "label": "Play once" }
+            ],
+            "default": "true"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "name": "gif-maker-plugin-deps",
+  "private": true,
+  "description": "Vendored runtime dependencies for the gif-maker plugin's decode support — see tools/codecs.js. Committed node_modules, not gitignored: the plugin installer copies this directory verbatim with no npm-install step, so the resolved dependency tree must already exist on disk for Node's module resolution to find it (same pattern as plugins/image-converter/package.json). png/jpg/webp decode are WASM codecs (@jsquash/*, repackaged Squoosh); bmp decode is pure JS; omggif is the pure-JS GIF encoder used for the combined animated output.",
+  "dependencies": {
+    "@jsquash/png": "3.1.1",
+    "@jsquash/jpeg": "1.6.0",
+    "@jsquash/webp": "1.5.0",
+    "bmp-js": "0.1.0",
+    "omggif": "1.0.10"
+  }
+}

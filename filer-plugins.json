@@ -110,6 +110,14 @@
       "tags": ["convert", "image", "png", "jpg", "jpeg", "webp", "gif", "bmp"]
     },
     {
+      "name": "gif-maker",
+      "source": "./plugins/gif-maker",
+      "description": "Combine several images into one animated GIF",
+      "version": "0.1.0",
+      "category": "media",
+      "tags": ["gif", "animation", "image", "combine", "convert"]
+    },
+    {
       "name": "image-describer",
       "source": "./plugins/image-describer",
       "description": "Describe image content and extract text from images using AI vision",
