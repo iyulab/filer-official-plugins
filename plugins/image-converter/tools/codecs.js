@@ -57,9 +57,11 @@ function decodeGif(buffer) {
 function encodeGif(imageData) {
   const omggif = require('omggif')
   const { width, height, data } = imageData
-  // GIF is palette-indexed (max 256 colors) — quantize by exact-match dedup, first-come-first-served
-  // past 256 distinct colors. Adequate for v1 (GIF is the lowest-priority target format); a
-  // perceptual quantizer is future scope, not implemented here.
+  // GIF is palette-indexed (max 256 colors, and omggif requires the palette length itself to be a
+  // power of two — a plain color count like 3 or 137 throws). Quantize by exact-match dedup,
+  // first-come-first-served past 256 distinct colors (adequate for v1, a perceptual quantizer is
+  // future scope), then round the palette up to the next power of two so omggif accepts it (mirrors
+  // the sibling `gif-maker` plugin's `quantizeFrame`).
   const palette = []
   const paletteMap = new Map()
   const indexed = new Uint8Array(width * height)
@@ -77,6 +79,9 @@ function encodeGif(imageData) {
     indexed[i] = idx
   }
   while (palette.length < 2) palette.push([0, 0, 0])
+  let paletteSize = 2
+  while (paletteSize < palette.length) paletteSize *= 2
+  while (palette.length < paletteSize) palette.push([0, 0, 0])
   const buf = Buffer.alloc(width * height * 4 + 1024)
   const writer = new omggif.GifWriter(buf, width, height, {
     palette: palette.map(([r, g, b]) => (r << 16) | (g << 8) | b),

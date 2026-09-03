@@ -26,9 +26,9 @@ async function withTempDir(fn) {
 
 // 4x4 synthetic RGBA image, guaranteed-valid by construction (not a hand-typed binary fixture —
 // cycle-580's spike found a hand-typed base64 PNG was silently corrupt and wasted a debugging pass).
-function makeTestImageData() {
-  const width = 4
-  const height = 4
+// width/height default to 4x4 (16 distinct colors, a power of two by construction); pass a smaller
+// pair to get a non-power-of-two distinct color count (each pixel's color is unique by formula).
+function makeTestImageData(width = 4, height = 4) {
   const data = new Uint8ClampedArray(width * height * 4)
   for (let i = 0; i < width * height; i++) {
     data[i * 4] = (i * 37) % 256
@@ -39,9 +39,9 @@ function makeTestImageData() {
   return { width, height, data }
 }
 
-async function writeTestSource(dir, format) {
+async function writeTestSource(dir, format, imageData = makeTestImageData()) {
   const sourcePath = path.join(dir, `sample.${format}`)
-  const bytes = await encodeFromImageData(makeTestImageData(), format)
+  const bytes = await encodeFromImageData(imageData, format)
   fs.writeFileSync(sourcePath, bytes)
   return sourcePath
 }
@@ -89,6 +89,20 @@ test('convert_image converts png to gif and back', async () => {
     assert.equal(toPng.success, true)
     assert.equal(toPng.width, 4)
     assert.equal(toPng.height, 4)
+  })
+})
+
+test('convert_image converts png to gif with a non-power-of-two distinct color count', async () => {
+  await withTempDir(async (dir) => {
+    // 3x1 image = exactly 3 distinct colors (not a power of two) — the 4x4/16-color default fixture
+    // above never exercises this path, which is why the roundtrip test never caught the crash.
+    const sourcePath = await writeTestSource(dir, 'png', makeTestImageData(3, 1))
+    const gifPath = path.join(dir, 'sample.gif')
+
+    const result = await handler({ path: sourcePath, targetFormat: 'gif', outputPath: gifPath }, fsCtx())
+
+    assert.equal(result.success, true)
+    assert.ok(fs.existsSync(gifPath))
   })
 })
 
