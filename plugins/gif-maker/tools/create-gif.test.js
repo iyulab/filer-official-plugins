@@ -254,6 +254,50 @@ test('create_gif reports a clear error for a corrupt source file, not a crash', 
   })
 })
 
+test('create_gif maps an overflow color to its nearest palette entry, not a fixed index', async () => {
+  await withTempDir(async (dir) => {
+    // A 50x50 image (2500 px — comfortably clears the encoder's local-palette + LZW overhead
+    // for 2 frames of exactly 256 colors each): the first 256 pixels (raster order) form a red/
+    // green gradient with 256 distinct colors — (i, 255-i, 0) for i in 0..255 — filling the
+    // palette budget exactly. The remaining pixels are all (128, 128, 128), a color not present
+    // in that gradient, forcing every one of them through the overflow path. Nearest-color search
+    // over the gradient should land near i=127/128 (R and G both close to 127), not snap to
+    // color(0) = (0, 255, 0) — the old behavior that crushed every overflow pixel to a fixed index.
+    const width = 50, height = 50
+    const data = new Uint8ClampedArray(width * height * 4)
+    for (let i = 0; i < width * height; i++) {
+      if (i < 256) {
+        data[i * 4] = i
+        data[i * 4 + 1] = 255 - i
+        data[i * 4 + 2] = 0
+      } else {
+        data[i * 4] = 128
+        data[i * 4 + 1] = 128
+        data[i * 4 + 2] = 128
+      }
+      data[i * 4 + 3] = 255
+    }
+    const p = path.join(dir, 'gradient.png')
+    fs.writeFileSync(p, await encodePng({ width, height, data }))
+
+    const paths = [p, await writePngFrame(dir, 'b.png', width, height, 2)]
+    const outputPath = path.join(dir, 'out.gif')
+
+    const result = await handler({ paths, outputPath }, fsCtx())
+    assert.equal(result.success, true)
+
+    const reader = readGif(outputPath)
+    const pixels = new Uint8Array(width * height * 4)
+    reader.decodeAndBlitFrameRGBA(0, pixels)
+    // Pixel 256 is the first overflow pixel (index 256 in raster order, i.e. row 12, col 16).
+    const r = pixels[256 * 4]
+    const g = pixels[256 * 4 + 1]
+    assert.ok(r > 80 && r < 176, `expected R near the gradient midpoint (~127), got ${r}`)
+    assert.ok(g > 80 && g < 176, `expected G near the gradient midpoint (~127), got ${g}`)
+    assert.ok(!(r === 0 && g === 255), 'overflow pixel must not be crushed to the fixed color(0) index')
+  })
+})
+
 test('create_gif requires paths and outputPath', async () => {
   const result = await handler({ paths: ['x.png'] }, fsCtx())
   assert.equal(result.success, false)

@@ -5,10 +5,27 @@ const MAX_FRAMES = 20
 const SUPPORTED_EXTENSIONS = new Set(['png', 'jpg', 'jpeg', 'webp', 'bmp'])
 
 // GIF frames are palette-indexed (max 256 colors, and omggif requires the palette length itself
-// to be a power of two — a plain color count like 137 throws). Quantize by exact-match dedup,
-// first-come-first-served past 256 distinct colors (adequate for combining a handful of small
-// images; a perceptual quantizer is future scope), then round the palette up to the next power
-// of two so omggif accepts it.
+// to be a power of two — a plain color count like 137 throws). Quantize by exact-match dedup for
+// the first 256 distinct colors; a color seen after the palette fills maps to its nearest existing
+// palette entry (by RGB distance) rather than an arbitrary fixed index — real screenshots (anti-
+// aliased text) commonly have thousands of distinct colors, and mapping overflow to a single fixed
+// index visibly erases most of that detail instead of approximating it. Round the palette up to the
+// next power of two so omggif accepts it.
+function nearestColorIndex(colors, r, g, b) {
+  let best = 0
+  let bestDist = Infinity
+  for (let i = 0; i < colors.length; i++) {
+    const [cr, cg, cb] = colors[i]
+    const dr = r - cr, dg = g - cg, db = b - cb
+    const dist = dr * dr + dg * dg + db * db
+    if (dist < bestDist) {
+      bestDist = dist
+      best = i
+    }
+  }
+  return best
+}
+
 function quantizeFrame(imageData) {
   const { width, height, data } = imageData
   const colors = []
@@ -19,11 +36,13 @@ function quantizeFrame(imageData) {
     const key = (r << 16) | (g << 8) | b
     let idx = colorMap.get(key)
     if (idx === undefined) {
-      idx = colors.length < 256 ? colors.length : 0
       if (colors.length < 256) {
+        idx = colors.length
         colors.push([r, g, b])
-        colorMap.set(key, idx)
+      } else {
+        idx = nearestColorIndex(colors, r, g, b)
       }
+      colorMap.set(key, idx)
     }
     indexed[i] = idx
   }
