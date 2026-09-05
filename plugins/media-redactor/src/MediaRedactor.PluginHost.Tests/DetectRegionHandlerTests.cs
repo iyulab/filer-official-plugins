@@ -9,12 +9,24 @@ public class DetectRegionHandlerTests
     [Fact]
     public void BuildPrompt_AsksForStrictJsonCoordinates()
     {
-        var prompt = DetectRegionHandler.BuildPrompt("the folder sidebar on the left");
+        var prompt = DetectRegionHandler.BuildPrompt("the folder sidebar on the left", 1920, 1080);
 
         prompt.Should().Contain("the folder sidebar on the left");
         prompt.Should().Contain("JSON");
         prompt.Should().Contain("\"x\"");
         prompt.Should().Contain("width");
+    }
+
+    [Fact]
+    public void BuildPrompt_StatesTheActualImageDimensions()
+    {
+        // Regression test: a vision model reasons in whatever coordinate space it internally
+        // resizes the image to unless told the real dimensions — omitting them produces
+        // plausible-looking but wrong coordinates for any image not already at that internal size.
+        var prompt = DetectRegionHandler.BuildPrompt("the red box", 400, 300);
+
+        prompt.Should().Contain("400");
+        prompt.Should().Contain("300");
     }
 
     [Fact]

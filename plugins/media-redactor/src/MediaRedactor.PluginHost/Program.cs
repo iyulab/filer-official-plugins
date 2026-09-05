@@ -54,7 +54,8 @@ try
                 };
                 var dataUrl = $"data:{mimeType};base64,{Convert.ToBase64String(imageBytes)}";
 
-                var prompt = DetectRegionHandler.BuildPrompt(description);
+                var (imageWidth, imageHeight) = await DetectRegionHandler.ProbeDimensionsAsync(framePath, ffmpegBinaryFolder);
+                var prompt = DetectRegionHandler.BuildPrompt(description, imageWidth, imageHeight);
                 response = await rpc.SendRequestAsync("ai.complete", new Dictionary<string, object?>
                 {
                     ["prompt"] = prompt,
