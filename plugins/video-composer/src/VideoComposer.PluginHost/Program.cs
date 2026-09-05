@@ -29,8 +29,11 @@ try
             var captions = request.Params.GetProperty("captions").EnumerateArray().Select(e => e.GetString()!).ToList();
             var sceneDurationSeconds = request.Params.GetProperty("sceneDurationSeconds").GetDouble();
             var outputPath = request.Params.GetProperty("outputPath").GetString()!;
+            var aspectRatio = request.Params.TryGetProperty("aspectRatio", out var aspectRatioProp)
+                ? aspectRatioProp.GetString()!
+                : "16:9";
 
-            var result = await composer.ComposeAsync(new ComposeVideoRequest(imagePaths, captions, sceneDurationSeconds, outputPath));
+            var result = await composer.ComposeAsync(new ComposeVideoRequest(imagePaths, captions, sceneDurationSeconds, outputPath, aspectRatio));
             if (result.Success)
                 rpc.WriteFinalResult(request.Id, new ComposeVideoResultPayload(true, result.OutputPath, result.SrtPath));
             else

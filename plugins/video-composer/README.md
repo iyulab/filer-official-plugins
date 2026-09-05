@@ -1,9 +1,15 @@
 # video-composer
 
-Composes selected images into a captioned, Ken-Burns-animated 16:9 video via a bundled ffmpeg —
-no dependency on Filer's own `FfmpegProvisioner`/`MediaService`.
+Composes selected images into a captioned, Ken-Burns-animated video via a bundled ffmpeg — no
+dependency on Filer's own `FfmpegProvisioner`/`MediaService`. Output defaults to 16:9 landscape;
+`compose_video`'s `aspectRatio` parameter also accepts `9:16` for vertical/short-form output.
 
-## Build
+## Scope
+
+**Rendering is ffmpeg-only by design, not a placeholder for future providers.** `compose-video.
+schema.json` has no `provider`-style field, and none is planned unless a real second rendering
+backend is actually being integrated — an unused "provider" knob with one real value would promise
+pluggability the plugin doesn't have. If that changes, this note is the place to update.
 
 1. Publish the .NET host:
    ```

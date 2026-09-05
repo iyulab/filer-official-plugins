@@ -1,7 +1,7 @@
 {
   "name": "video-composer",
   "displayName": "Video Composer",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Compose selected images into a captioned, animated 16:9 video (no narration)",
   "author": { "name": "iyulab", "url": "https://github.com/iyulab" },
   "repository": "https://github.com/iyulab/filer-official-plugins",
@@ -32,7 +32,7 @@
       {
         "id": "compose_video",
         "title": "Compose Video from Images",
-        "description": "Compose 2+ images into one captioned, Ken-Burns-animated 16:9 .mp4 (+ sibling .srt). Requires imagePaths, captions (one per image), sceneDurationSeconds, outputPath. Refuses to overwrite an existing file at outputPath.",
+        "description": "Compose 2+ images into one captioned, Ken-Burns-animated .mp4 (+ sibling .srt). Requires imagePaths, captions (one per image), sceneDurationSeconds, outputPath. Optional aspectRatio: '16:9' (default, landscape) or '9:16' (vertical/short-form). Refuses to overwrite an existing file at outputPath.",
         "schema": "./tools/compose-video.schema.json"
       }
     ],

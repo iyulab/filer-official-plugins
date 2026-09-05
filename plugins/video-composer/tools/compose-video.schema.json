@@ -22,6 +22,12 @@
       "type": "string",
       "format": "file-path",
       "description": "Where to write the composed .mp4 (a sibling .srt is written alongside it). Must not already exist."
+    },
+    "aspectRatio": {
+      "type": "string",
+      "enum": ["16:9", "9:16"],
+      "default": "16:9",
+      "description": "Video frame shape. 16:9 for landscape/desktop viewing (default), 9:16 for vertical short-form video."
     }
   },
   "required": ["imagePaths", "captions", "sceneDurationSeconds", "outputPath"]
