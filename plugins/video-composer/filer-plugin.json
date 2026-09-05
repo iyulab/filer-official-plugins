@@ -46,6 +46,7 @@
         "scope": "multi-file",
         "fileTypes": ["image"],
         "multiFileMode": "batch",
+        "hidden": true,
         "params": [
           { "id": "introText", "label": "Video intro/purpose", "type": "text", "required": true }
         ]
