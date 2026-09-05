@@ -1,0 +1,72 @@
+{
+  "name": "media-redactor",
+  "displayName": "Media Redactor",
+  "version": "0.1.0",
+  "description": "Pixelate a region of an image or video to hide sensitive info before sharing it",
+  "author": { "name": "iyulab", "url": "https://github.com/iyulab" },
+  "repository": "https://github.com/iyulab/filer-official-plugins",
+  "license": "MIT",
+  "keywords": ["redact", "blur", "pixelate", "privacy", "image", "video", "ffmpeg"],
+  "category": "media",
+  "runtime": "process",
+  "command": "./bin/MediaRedactor.PluginHost.exe",
+  "engines": { "filer": ">=0.5.0" },
+  "bundled": false,
+  "capabilities": ["redact-media"],
+  "permissions": {
+    "fs": {
+      "read": { "parameter": true, "deny": ["**/.env", "**/.env.*", "**/.ssh/**", "**/*.pem", "**/*.key"] },
+      "write": { "parameter": true, "deny": ["**/.env", "**/.env.*", "**/.ssh/**", "**/*.pem", "**/*.key"] }
+    },
+    "ai": { "complete": true },
+    "execution": { "timeout": "120s" }
+  },
+  "contributes": {
+    "tools": [
+      {
+        "id": "detect_region",
+        "title": "Detect Region to Redact (AI)",
+        "description": "Describe the region to redact in natural language (e.g. 'the folder sidebar on the left') and get back pixel coordinates {x, y, width, height} inferred by a vision-capable model. Requires path, description. Optional frameTimestamp (video only, default 0) picks which frame to analyze. Also writes the detected coordinates to a sidecar '<path>.detect-region.json' file next to the source, since the result itself isn't otherwise shown to the user. Fails with a specific message if no remote vision-capable model is configured — the caller should fall back to manual coordinate entry, not retry.",
+        "schema": "./tools/detect-region.schema.json"
+      },
+      {
+        "id": "redact_region",
+        "title": "Redact a Region",
+        "description": "Pixelate a fixed rectangular region of an image or video. Requires path, x, y, width, height, outputPath. Optional startTime/endTime (video only, seconds) limit the redaction to that time range — omit both to redact the whole duration. Refuses to overwrite an existing file at outputPath.",
+        "schema": "./tools/redact-region.schema.json"
+      }
+    ],
+    "actions": [
+      {
+        "id": "detect-region",
+        "title": "Detect Region (AI)...",
+        "description": "Describe what to redact and let AI find the pixel coordinates, saved next to the file as '<name>.detect-region.json' — open it, then type the numbers into \"Redact Region...\" yourself",
+        "kind": "tool",
+        "toolId": "detect_region",
+        "scope": "single-file",
+        "fileTypes": ["image", "video"],
+        "params": [
+          { "id": "description", "label": "What to redact", "type": "text", "required": true }
+        ]
+      },
+      {
+        "id": "redact",
+        "title": "Redact Region...",
+        "description": "Pixelate a region of this image or video",
+        "kind": "tool",
+        "toolId": "redact_region",
+        "scope": "single-file",
+        "fileTypes": ["image", "video"],
+        "params": [
+          { "id": "x", "label": "X", "type": "text", "required": true },
+          { "id": "y", "label": "Y", "type": "text", "required": true },
+          { "id": "width", "label": "Width", "type": "text", "required": true },
+          { "id": "height", "label": "Height", "type": "text", "required": true },
+          { "id": "startTime", "label": "Start time (seconds, video only)", "type": "text" },
+          { "id": "endTime", "label": "End time (seconds, video only)", "type": "text" },
+          { "id": "outputPath", "label": "Output filename", "type": "text", "required": true }
+        ]
+      }
+    ]
+  }
+}

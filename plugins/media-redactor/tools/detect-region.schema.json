@@ -1,0 +1,9 @@
+{
+  "type": "object",
+  "properties": {
+    "path": { "type": "string", "format": "file-path", "description": "The image or video file to analyze." },
+    "description": { "type": "string", "description": "Natural-language description of the region to find, e.g. 'the folder sidebar on the left'." },
+    "frameTimestamp": { "type": "number", "description": "Video only, seconds. Which frame to analyze. Defaults to 0.", "default": 0 }
+  },
+  "required": ["path", "description"]
+}

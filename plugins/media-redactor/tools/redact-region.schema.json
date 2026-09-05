@@ -1,0 +1,14 @@
+{
+  "type": "object",
+  "properties": {
+    "path": { "type": "string", "format": "file-path", "description": "The image or video file to redact." },
+    "x": { "type": "integer", "description": "Left edge of the region, in pixels.", "minimum": 0 },
+    "y": { "type": "integer", "description": "Top edge of the region, in pixels.", "minimum": 0 },
+    "width": { "type": "integer", "description": "Region width, in pixels.", "minimum": 1 },
+    "height": { "type": "integer", "description": "Region height, in pixels.", "minimum": 1 },
+    "startTime": { "type": "number", "description": "Video only, seconds. Omit for images or to redact from the start." },
+    "endTime": { "type": "number", "description": "Video only, seconds. Omit for images or to redact to the end." },
+    "outputPath": { "type": "string", "format": "file-path", "description": "Where to write the redacted file. Must not already exist." }
+  },
+  "required": ["path", "x", "y", "width", "height", "outputPath"]
+}

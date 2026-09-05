@@ -140,6 +140,14 @@
       "version": "0.1.0",
       "category": "media",
       "tags": ["video", "compose", "captions", "ken-burns", "ffmpeg"]
+    },
+    {
+      "name": "media-redactor",
+      "source": "./plugins/media-redactor",
+      "description": "Pixelate a region of an image or video to hide sensitive info before sharing it",
+      "version": "0.1.0",
+      "category": "media",
+      "tags": ["redact", "blur", "pixelate", "privacy", "image", "video", "ffmpeg"]
     }
   ]
 }
