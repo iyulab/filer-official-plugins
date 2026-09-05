@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.Json;
 using MediaRedactor.PluginHost;
 using PulsaRedact;
 
@@ -66,6 +67,25 @@ try
             }
 
             var (x, y, width, height) = DetectRegionHandler.ParseCoordinates(response);
+
+            // Write the detected coordinates to a sidecar file next to the ORIGINAL source path
+            // (not framePath, which is a temp extracted video frame already deleted by this point).
+            // Built manually with Utf8JsonWriter — no reflection-based JsonSerializer.Serialize —
+            // because this executable is published with PublishAot=true (see StdioJsonRpc.cs).
+            using (var sidecarStream = new MemoryStream())
+            {
+                using (var sidecarWriter = new Utf8JsonWriter(sidecarStream))
+                {
+                    sidecarWriter.WriteStartObject();
+                    sidecarWriter.WriteNumber("x", x);
+                    sidecarWriter.WriteNumber("y", y);
+                    sidecarWriter.WriteNumber("width", width);
+                    sidecarWriter.WriteNumber("height", height);
+                    sidecarWriter.WriteEndObject();
+                }
+                await File.WriteAllBytesAsync($"{path}.detect-region.json", sidecarStream.ToArray());
+            }
+
             rpc.WriteFinalResult(request.Id, new DetectRegionResultPayload(true, x, y, width, height));
             break;
         }

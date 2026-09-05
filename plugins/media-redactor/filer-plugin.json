@@ -19,7 +19,7 @@
       "write": { "parameter": true, "deny": ["**/.env", "**/.env.*", "**/.ssh/**", "**/*.pem", "**/*.key"] }
     },
     "ai": { "complete": true },
-    "execution": { "timeout": "120s" }
+    "execution": { "timeout": "300s" }
   },
   "contributes": {
     "tools": [
