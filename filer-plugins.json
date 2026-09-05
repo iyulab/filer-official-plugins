@@ -132,6 +132,14 @@
       "version": "0.1.0",
       "category": "document",
       "tags": ["convert", "document", "docx", "word", "pdf", "markdown", "md", "html", "txt"]
+    },
+    {
+      "name": "video-composer",
+      "source": "./plugins/video-composer",
+      "description": "Compose selected images into a captioned, animated 16:9 video (no narration)",
+      "version": "0.1.0",
+      "category": "media",
+      "tags": ["video", "compose", "captions", "ken-burns", "ffmpeg"]
     }
   ]
 }

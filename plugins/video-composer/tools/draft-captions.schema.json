@@ -1,0 +1,16 @@
+{
+  "type": "object",
+  "properties": {
+    "imagePaths": {
+      "type": "array",
+      "description": "Images the captions are being drafted for, in scene order.",
+      "items": { "type": "string", "format": "file-path" },
+      "minItems": 1
+    },
+    "introText": {
+      "type": "string",
+      "description": "The video's intro/purpose, used as the source material for drafting captions."
+    }
+  },
+  "required": ["imagePaths", "introText"]
+}

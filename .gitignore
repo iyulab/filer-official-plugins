@@ -1,0 +1,4 @@
+# .NET build intermediates — a plugin's own distributed bin/ (what filer-plugin.json's "command"
+# points at) is deliberately NOT ignored here, since this repo ships it directly via git.
+**/obj/
+plugins/*/src/**/bin/

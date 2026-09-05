@@ -1,0 +1,28 @@
+{
+  "type": "object",
+  "properties": {
+    "imagePaths": {
+      "type": "array",
+      "description": "Source images to compose, in scene order (2+ of .png, .jpg, .jpeg, .webp, .bmp).",
+      "items": { "type": "string", "format": "file-path" },
+      "minItems": 2
+    },
+    "captions": {
+      "type": "array",
+      "description": "One caption per image, aligned to imagePaths order.",
+      "items": { "type": "string" }
+    },
+    "sceneDurationSeconds": {
+      "type": "number",
+      "description": "How long each scene is shown, in seconds. Defaults to 4.",
+      "default": 4,
+      "minimum": 0.5
+    },
+    "outputPath": {
+      "type": "string",
+      "format": "file-path",
+      "description": "Where to write the composed .mp4 (a sibling .srt is written alongside it). Must not already exist."
+    }
+  },
+  "required": ["imagePaths", "captions", "sceneDurationSeconds", "outputPath"]
+}

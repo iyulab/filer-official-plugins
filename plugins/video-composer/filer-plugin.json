@@ -1,0 +1,78 @@
+{
+  "name": "video-composer",
+  "displayName": "Video Composer",
+  "version": "0.1.0",
+  "description": "Compose selected images into a captioned, animated 16:9 video (no narration)",
+  "author": { "name": "iyulab", "url": "https://github.com/iyulab" },
+  "repository": "https://github.com/iyulab/filer-official-plugins",
+  "license": "MIT",
+  "keywords": ["video", "compose", "captions", "ken-burns", "ffmpeg"],
+  "category": "media",
+  "runtime": "process",
+  "command": "./bin/VideoComposer.PluginHost.exe",
+  "engines": { "filer": ">=0.5.0" },
+  "bundled": false,
+  "capabilities": ["compose-video"],
+  "permissions": {
+    "fs": {
+      "read": { "parameter": true, "deny": ["**/.env", "**/.env.*", "**/.ssh/**", "**/*.pem", "**/*.key"] },
+      "write": { "parameter": true, "deny": ["**/.env", "**/.env.*", "**/.ssh/**", "**/*.pem", "**/*.key"] }
+    },
+    "ai": { "complete": true },
+    "execution": { "timeout": "300s" }
+  },
+  "contributes": {
+    "tools": [
+      {
+        "id": "draft_captions",
+        "title": "Draft Video Captions (AI)",
+        "description": "Draft one short caption per image using the user's own configured model, from a video intro/purpose text. Requires imagePaths, introText. Returns { success, captions } — captions is ordered to match imagePaths.",
+        "schema": "./tools/draft-captions.schema.json"
+      },
+      {
+        "id": "compose_video",
+        "title": "Compose Video from Images",
+        "description": "Compose 2+ images into one captioned, Ken-Burns-animated 16:9 .mp4 (+ sibling .srt). Requires imagePaths, captions (one per image), sceneDurationSeconds, outputPath. Refuses to overwrite an existing file at outputPath.",
+        "schema": "./tools/compose-video.schema.json"
+      }
+    ],
+    "actions": [
+      {
+        "id": "draft-captions",
+        "title": "Draft Video Captions (AI)...",
+        "description": "Draft short captions for these images using your configured model",
+        "kind": "tool",
+        "toolId": "draft_captions",
+        "scope": "multi-file",
+        "fileTypes": ["image"],
+        "multiFileMode": "batch",
+        "params": [
+          { "id": "introText", "label": "Video intro/purpose", "type": "text", "required": true }
+        ]
+      },
+      {
+        "id": "create-video",
+        "title": "Create Video...",
+        "description": "Compose these images into one captioned video, in the order selected",
+        "kind": "tool",
+        "toolId": "compose_video",
+        "scope": "multi-file",
+        "fileTypes": ["image"],
+        "fileExtensions": [".png", ".jpg", ".jpeg", ".webp", ".bmp"],
+        "multiFileMode": "batch",
+        "generate": {
+          "label": "Draft Captions (AI)",
+          "actionId": "draft-captions",
+          "populateParamId": "captions",
+          "forwardParamIds": ["introText"]
+        },
+        "params": [
+          { "id": "introText", "label": "Video intro/purpose", "type": "text" },
+          { "id": "captions", "label": "Caption", "type": "per-file-text" },
+          { "id": "sceneDurationSeconds", "label": "Seconds per scene", "type": "text", "default": "4", "required": true },
+          { "id": "outputPath", "label": "Output filename", "type": "text", "required": true }
+        ]
+      }
+    ]
+  }
+}
