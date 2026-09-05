@@ -38,24 +38,32 @@ try
                 ? await ExtractFrameAsync(path, frameTimestamp, ffmpegBinaryFolder)
                 : path;
 
-            var imageBytes = await File.ReadAllBytesAsync(framePath);
-            var mimeType = Path.GetExtension(framePath).ToLowerInvariant() switch
+            string response;
+            try
             {
-                ".png" => "image/png",
-                ".jpg" or ".jpeg" => "image/jpeg",
-                ".webp" => "image/webp",
-                _ => "image/png",
-            };
-            var dataUrl = $"data:{mimeType};base64,{Convert.ToBase64String(imageBytes)}";
+                var imageBytes = await File.ReadAllBytesAsync(framePath);
+                var mimeType = Path.GetExtension(framePath).ToLowerInvariant() switch
+                {
+                    ".png" => "image/png",
+                    ".jpg" or ".jpeg" => "image/jpeg",
+                    ".webp" => "image/webp",
+                    ".bmp" => "image/bmp",
+                    ".gif" => "image/gif",
+                    _ => "image/png",
+                };
+                var dataUrl = $"data:{mimeType};base64,{Convert.ToBase64String(imageBytes)}";
 
-            var prompt = DetectRegionHandler.BuildPrompt(description);
-            var response = await rpc.SendRequestAsync("ai.complete", new Dictionary<string, object?>
+                var prompt = DetectRegionHandler.BuildPrompt(description);
+                response = await rpc.SendRequestAsync("ai.complete", new Dictionary<string, object?>
+                {
+                    ["prompt"] = prompt,
+                    ["imageUrls"] = (IReadOnlyList<string>)[dataUrl],
+                });
+            }
+            finally
             {
-                ["prompt"] = prompt,
-                ["imageUrls"] = (IReadOnlyList<string>)[dataUrl],
-            });
-
-            if (isVideo) File.Delete(framePath);
+                if (isVideo) File.Delete(framePath);
+            }
 
             var (x, y, width, height) = DetectRegionHandler.ParseCoordinates(response);
             rpc.WriteFinalResult(request.Id, new DetectRegionResultPayload(true, x, y, width, height));

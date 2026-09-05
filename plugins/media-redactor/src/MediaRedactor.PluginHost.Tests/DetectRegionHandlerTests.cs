@@ -13,7 +13,7 @@ public class DetectRegionHandlerTests
 
         prompt.Should().Contain("the folder sidebar on the left");
         prompt.Should().Contain("JSON");
-        prompt.Should().Contain("x");
+        prompt.Should().Contain("\"x\"");
         prompt.Should().Contain("width");
     }
 
