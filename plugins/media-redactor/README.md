@@ -32,6 +32,13 @@ Mirrors `video-composer`'s exact `runtime:"process"` shape — own NativeAOT `.c
 `video-composer` bundles its own: a `bin/ffmpeg/` folder next to the published executable, placed
 there manually during dev.
 
+Until `PulsaRedact.SDK` is published to nuget.org, restoring this project needs a locally configured
+NuGet source pointing at wherever that package is packed to during development — no path or feed
+location is hardcoded in this project's `.csproj` on purpose (see the sibling
+`ISSUE-filer-official-plugins-20260905-hardcoded-local-nuget-path-in-public-csproj.md` for why); add
+one with `dotnet nuget add source <your local feed path>` before restoring, and drop it again once the
+package ships to nuget.org and the `PackageReference` resolves from there directly.
+
 ```
 dotnet publish src/MediaRedactor.PluginHost -c Release -r win-x64 --self-contained -p:PublishAot=true -o bin
 ```
@@ -40,3 +47,7 @@ Then place a static ffmpeg build at `bin/ffmpeg/ffmpeg.exe` — the published
 `MediaRedactor.PluginHost.exe` looks for it at `<its own directory>/ffmpeg/ffmpeg.exe`. See
 `video-composer/README.md`'s "Bundled ffmpeg — exact pin" section for the currently-trusted
 win-x64 build/checksum; use the same one here unless a reason to diverge comes up.
+
+The `bin/` output above (including the ffmpeg binary) ships **committed** to this repo, the same way
+`video-composer/bin/` does — this plugin's `filer-plugin.json` registry entry only becomes installable
+once that directory exists and is committed.
