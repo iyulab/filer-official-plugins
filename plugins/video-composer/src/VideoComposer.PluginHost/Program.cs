@@ -2,6 +2,12 @@ using System.Text;
 using PulsaVideoCompose;
 using VideoComposer.PluginHost;
 
+// Must run before ffmpeg can ever be spawned (compose_video below): joins this process to a
+// Windows Job Object so a future timeout-kill of this process (the host can only TerminateProcess
+// it, never signal it — see WindowsJobObject's own doc comment) takes ffmpeg down with it instead
+// of orphaning it.
+WindowsJobObject.EnsureChildProcessesDieWithThisProcess();
+
 // Console I/O is pinned to explicit UTF-8, independent of the host process's own console code
 // page — the wire protocol is UTF-8 regardless of what code page a real attached console (if any)
 // would otherwise select.
