@@ -28,6 +28,24 @@
       "enum": ["16:9", "9:16"],
       "default": "16:9",
       "description": "Video frame shape. 16:9 for landscape/desktop viewing (default), 9:16 for vertical short-form video."
+    },
+    "titleImagePath": {
+      "type": "string",
+      "format": "file-path",
+      "description": "Optional. An image (a logo, a branded background, anything) shown as an opening title card with titleText burned in large and centered, before the first scene. Must be given together with titleText."
+    },
+    "titleText": {
+      "type": "string",
+      "description": "Text burned onto titleImagePath. Must be given together with titleImagePath."
+    },
+    "outroImagePath": {
+      "type": "string",
+      "format": "file-path",
+      "description": "Optional. Same as titleImagePath but shown as a closing card after the last scene, with outroText. Must be given together with outroText."
+    },
+    "outroText": {
+      "type": "string",
+      "description": "Text burned onto outroImagePath. Must be given together with outroImagePath."
     }
   },
   "required": ["imagePaths", "captions", "sceneDurationSeconds", "outputPath"]

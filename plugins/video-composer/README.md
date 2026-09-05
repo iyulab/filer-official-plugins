@@ -3,6 +3,10 @@
 Composes selected images into a captioned, Ken-Burns-animated video via a bundled ffmpeg — no
 dependency on Filer's own `FfmpegProvisioner`/`MediaService`. Output defaults to 16:9 landscape;
 `compose_video`'s `aspectRatio` parameter also accepts `9:16` for vertical/short-form output.
+Optional `titleImagePath`+`titleText` / `outroImagePath`+`outroText` add a static (no Ken-Burns
+motion) opening/closing card — the image can be anything the caller supplies (a logo, a solid-color
+card, a branded background); this plugin and the SDK behind it have no concept of "logo" or "brand"
+of their own.
 
 ## Scope
 

@@ -32,8 +32,14 @@ try
             var aspectRatio = request.Params.TryGetProperty("aspectRatio", out var aspectRatioProp)
                 ? aspectRatioProp.GetString()!
                 : "16:9";
+            var titleImagePath = request.Params.TryGetProperty("titleImagePath", out var titleImagePathProp) ? titleImagePathProp.GetString() : null;
+            var titleText = request.Params.TryGetProperty("titleText", out var titleTextProp) ? titleTextProp.GetString() : null;
+            var outroImagePath = request.Params.TryGetProperty("outroImagePath", out var outroImagePathProp) ? outroImagePathProp.GetString() : null;
+            var outroText = request.Params.TryGetProperty("outroText", out var outroTextProp) ? outroTextProp.GetString() : null;
 
-            var result = await composer.ComposeAsync(new ComposeVideoRequest(imagePaths, captions, sceneDurationSeconds, outputPath, aspectRatio));
+            var result = await composer.ComposeAsync(new ComposeVideoRequest(
+                imagePaths, captions, sceneDurationSeconds, outputPath, aspectRatio,
+                titleImagePath, titleText, outroImagePath, outroText));
             if (result.Success)
                 rpc.WriteFinalResult(request.Id, new ComposeVideoResultPayload(true, result.OutputPath, result.SrtPath));
             else
