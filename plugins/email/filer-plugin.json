@@ -98,7 +98,7 @@
       "email.enableImapPolling": {
         "type": "boolean",
         "title": "Enable inbound email",
-        "description": "Listen for new mail and trigger a Filer agent run for each message. Restart Filer after turning this on or off for the change to take effect.",
+        "description": "Listen for new mail and trigger a Filer agent run for each message. If Filer is busy or restarting when mail arrives, delivery is retried; a message that still cannot be delivered after three attempts stays in your mailbox and is noted in the log. Restart Filer after turning this on or off for the change to take effect.",
         "default": false,
         "order": 11
       },

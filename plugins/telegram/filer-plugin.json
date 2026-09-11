@@ -37,7 +37,7 @@
       "telegram.setup": {
         "type": "info",
         "title": "Setup Guide",
-        "description": "1. Open Telegram and search for @BotFather\n2. Send /newbot and follow the prompts to create a bot\n3. Copy the Bot Token and paste it below\n4. Open your new bot in Telegram and send /start\n5. Click \"Fetch Chat ID\" to auto-detect your chat\n6. Click \"Send Test Message\" to verify the connection",
+        "description": "1. Open Telegram and search for @BotFather\n2. Send /newbot and follow the prompts to create a bot\n3. Copy the Bot Token and paste it below\n4. Open your new bot in Telegram and send /start\n5. Click \"Fetch Chat ID\" to auto-detect your chat\n6. Click \"Send Test Message\" to verify the connection\n\nMessages you send to the bot from this chat are delivered to your Filer agent. If Filer is busy or restarting when one arrives, delivery is retried; a message that still cannot be delivered after three attempts is skipped and noted in the log.",
         "order": 0
       },
       "telegram.botToken": {
