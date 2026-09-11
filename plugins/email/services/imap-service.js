@@ -15,6 +15,20 @@ const { createCoalescingGuard } = require('./coalescing-guard.js');
 let client = null;
 let isRunning = false;
 
+const CURSOR_KEY = 'email.imapCursor';
+// Per-message delivery attempts, `{ [uid]: attempts }`, persisted so a restart does not
+// reset the count. Cleared with the cursor on a UIDVALIDITY reset (UIDs are reused then).
+const RETRY_KEY = 'email.imapRetry';
+// A message that fails delivery this many times is given up on: the cursor moves past it,
+// an error names the uid, and the mail stays on the server. Bounds how long one bad
+// message can hold every message behind it.
+const MAX_DELIVERY_ATTEMPTS = 3;
+// Delay before re-running the fetch after a transient failure, by attempt number. Without
+// this, nothing re-fires a fetch on a healthy IDLE connection until the next 'exists' —
+// hours, if no new mail arrives.
+const RETRY_DELAYS_MS = [30_000, 120_000];
+let retryTimer = null;
+
 // Guards fetchNewMessages() against overlap. A rapid burst of 'exists'
 // events (and the connect-time drain racing a same-tick 'exists', both
 // reachable — 'exists' only waits on `cursorPrimed`, not on any prior fetch
@@ -56,6 +70,7 @@ async function start(ctx) {
  */
 function stop() {
   isRunning = false;
+  clearRetryTimer();
   if (client) {
     client.logout().catch(() => {});
     client = null;
@@ -120,6 +135,12 @@ async function runLoop(ctx, creds, backoffMs) {
 
     await new Promise((resolve) => client.on('close', resolve));
 
+    // A retry timer belongs to the session that scheduled it: the reconnect below re-primes
+    // the cursor and drains from it, which re-yields any message still owed, so the timer
+    // must not fire into the connect → primeCursor window against a not-yet-validated cursor
+    // (the same hazard the 'exists' guard above protects against).
+    clearRetryTimer();
+
     if (!isRunning) return;
 
     // imapflow's own error handling (emitError() -> closeAfter()) routes
@@ -138,6 +159,7 @@ async function runLoop(ctx, creds, backoffMs) {
     await sleep(nextBackoff);
     return runLoop(ctx, creds, nextBackoff);
   } catch (err) {
+    clearRetryTimer();
     if (isAuthFailure(err)) {
       ctx.log.error('IMAP authentication failed — stopping, check credentials.');
       ctx.toast({ type: 'error', message: 'Email: IMAP login failed. Check your IMAP credentials in Settings.' });
@@ -158,7 +180,7 @@ async function runLoop(ctx, creds, backoffMs) {
  * @param {{uidValidity:bigint, uidNext:number}} mailbox
  */
 async function primeCursor(ctx, mailbox) {
-  const stored = await ctx.store.get('email.imapCursor');
+  const stored = await ctx.store.get(CURSOR_KEY);
   // imapflow's mailboxOpen() reports UIDVALIDITY as a BigInt (verified
   // against the installed package's lib/imap-flow.d.ts and
   // lib/commands/select.js, which parses it via parseBigIntValue()).
@@ -173,12 +195,49 @@ async function primeCursor(ctx, mailbox) {
   const cursor = resolveCursor(stored, uidValidity, mailbox.uidNext);
   if (cursor.reset) {
     ctx.log.warn('IMAP UIDVALIDITY changed — mailbox cursor reset');
+    // The retry ledger is keyed by uid, and uids are reused after a UIDVALIDITY change — a
+    // stale attempt count would give up on a fresh message early.
+    await ctx.store.delete(RETRY_KEY);
   }
-  await ctx.store.set('email.imapCursor', { uidValidity: cursor.uidValidity, lastUid: cursor.lastUid });
+  await ctx.store.set(CURSOR_KEY, { uidValidity: cursor.uidValidity, lastUid: cursor.lastUid });
+}
+
+function clearRetryTimer() {
+  if (retryTimer) {
+    clearTimeout(retryTimer);
+    retryTimer = null;
+  }
+}
+
+/**
+ * Re-run the fetch after a transient delivery failure, once, after a delay that grows with
+ * the attempt count. Guarded on `client`: stop() and every disconnect path clear the timer
+ * and null/replace the client, so a live timer always belongs to a connected session.
+ * @param {object} ctx - PluginContext
+ * @param {number} attempts - attempts made so far on the message that deferred the batch
+ */
+function scheduleRetry(ctx, attempts) {
+  clearRetryTimer();
+  const delay = RETRY_DELAYS_MS[Math.min(attempts, RETRY_DELAYS_MS.length) - 1];
+  retryTimer = setTimeout(() => {
+    retryTimer = null;
+    if (!client) return;
+    scheduleFetch(ctx).catch((err) => {
+      ctx.log.error('Failed to retry IMAP delivery:', err.message);
+    });
+  }, delay);
+  retryTimer.unref?.();
 }
 
 /**
  * Fetch and process every message newer than the stored cursor.
+ *
+ * Cursor invariant: every uid <= `lastUid` was either delivered to the host or explicitly
+ * given up on after MAX_DELIVERY_ATTEMPTS. So a transient failure on uid X (host unreachable,
+ * IMAP download error, 5xx) leaves the cursor at X-1, defers every later message in the batch
+ * (they wait behind X rather than being re-downloaded on the retry), records the attempt in
+ * the retry ledger and schedules a re-fetch. Before this, `lastUid` advanced past a failed
+ * message and that email was never delivered — a silent drop on any blip.
  *
  * Two passes, deliberately not fused into one loop: imapflow's own `fetch()` JSDoc warns
  * "You can not run any IMAP commands in this loop otherwise you will end up in a deadloop"
@@ -195,7 +254,7 @@ async function primeCursor(ctx, mailbox) {
  * @param {object} ctx - PluginContext
  */
 async function fetchNewMessages(ctx) {
-  const stored = await ctx.store.get('email.imapCursor');
+  const stored = await ctx.store.get(CURSOR_KEY);
   if (!stored) return;
 
   const messages = [];
@@ -203,22 +262,49 @@ async function fetchNewMessages(ctx) {
     if (message.uid <= stored.lastUid) continue; // the ':*' range can re-yield the last known UID
     messages.push(message);
   }
+  // Contiguity of the cursor depends on processing in uid order; the server's yield order
+  // is not something to assume.
+  messages.sort((a, b) => a.uid - b.uid);
 
-  let maxUid = stored.lastUid;
+  const retry = (await ctx.store.get(RETRY_KEY)) || {};
+  let lastUid = stored.lastUid;
+  let deferredAttempts = 0;
 
   for (const message of messages) {
     try {
       await handleMessage(ctx, message);
+      delete retry[message.uid];
     } catch (err) {
-      ctx.log.error(`Failed to process message uid=${message.uid}:`, err.message);
+      const attempts = (retry[message.uid] || 0) + 1;
+      if (attempts >= MAX_DELIVERY_ATTEMPTS) {
+        // Give up: the cursor moves past it so the mailbox never wedges; the mail itself stays
+        // on the server. Uid only — this line lands in support bundles.
+        delete retry[message.uid];
+        ctx.log.error(
+          `Giving up on inbound email uid=${message.uid} after ${attempts} failed delivery attempts — ` +
+            `it stays in the mailbox but will not reach the agent: ${err.message}`
+        );
+      } else {
+        retry[message.uid] = attempts;
+        ctx.log.warn(
+          `Failed to process message uid=${message.uid} (attempt ${attempts}/${MAX_DELIVERY_ATTEMPTS}), will retry: ${err.message}`
+        );
+        deferredAttempts = attempts;
+        break; // everything after this uid waits behind it
+      }
     }
-
-    if (message.uid > maxUid) maxUid = message.uid;
+    lastUid = message.uid;
   }
 
-  if (maxUid > stored.lastUid) {
-    await ctx.store.set('email.imapCursor', { uidValidity: stored.uidValidity, lastUid: maxUid });
+  if (lastUid !== stored.lastUid) {
+    await ctx.store.set(CURSOR_KEY, { uidValidity: stored.uidValidity, lastUid });
   }
+  if (Object.keys(retry).length > 0) {
+    await ctx.store.set(RETRY_KEY, retry);
+  } else {
+    await ctx.store.delete(RETRY_KEY);
+  }
+  if (deferredAttempts > 0) scheduleRetry(ctx, deferredAttempts);
 }
 
 /**
@@ -290,6 +376,12 @@ async function downloadAttachment(ctx, uid, attachment) {
 
 /**
  * Download, resolve the channel, and route one message to the host.
+ *
+ * Failure contract (fetchNewMessages relies on it): this throws only for a *transient*
+ * delivery failure — an IMAP download error, the host unreachable, or the host answering
+ * 5xx/429 — so the caller keeps the cursor before this uid and retries. Every deliberate
+ * drop (sender not allowlisted, 404 routing rejection, any other 4xx) returns normally so
+ * the cursor moves past it: retrying those would re-deliver the same answer.
  * @param {object} ctx - PluginContext
  * @param {{uid:number, envelope:object, bodyStructure:object}} message
  */
@@ -344,8 +436,9 @@ async function handleMessage(ctx, message) {
   //
   // HD-91: ctx.triggerInbound, not ctx.fetch — this always targets the host's own
   // localhost origin, which ctx.fetch's SSRF deny-list unconditionally blocks.
+  let resp;
   try {
-    const resp = await ctx.triggerInbound({
+    resp = await ctx.triggerInbound({
       channelId,
       sourcePlugin: 'email',
       messageId,
@@ -359,48 +452,57 @@ async function handleMessage(ctx, message) {
           }
         : {}),
     });
+  } catch (err) {
+    // The host is unreachable (typically: not up yet after a boot, or restarting). Transient
+    // by definition — propagate so the cursor does not move past this message.
+    throw new Error(`Failed to route inbound email (uid=${message.uid}): ${err.message}`);
+  }
 
-    if (resp.status === 202) {
-      return; // Accepted, host will dispatch the agent run.
+  if (resp.status === 202) {
+    return; // Accepted, host will dispatch the agent run.
+  }
+
+  if (resp.status >= 500 || resp.status === 429) {
+    const responseBody = await resp.text().catch(() => '');
+    throw new Error(`Inbound trigger failed transiently (${resp.status}) for uid=${message.uid}: ${responseBody}`);
+  }
+
+  if (resp.status === 404) {
+    // Two structurally different things return 404 here: a genuinely
+    // missing endpoint on a pre-CR-1 host (ASP.NET's default 404, no
+    // body shape to speak of) vs. a real routing rejection from a
+    // current host's /api/triggers/inbound (Results.NotFound(new
+    // {error: "..."}) for "channel not registered" / "no working agent
+    // bound to folder" — see TriggerEndpoints.cs). Falling back to the
+    // legacy path on a routing rejection would silently create an
+    // untagged, non-deduplicated session/chat turn instead of surfacing
+    // that the channel/agent isn't actually set up — losing origin
+    // tagging, which this project treats as an always-win invariant.
+    const responseBody = await resp.text().catch(() => '');
+    let routingError;
+    try {
+      routingError = JSON.parse(responseBody)?.error;
+    } catch {
+      // not JSON — genuinely missing endpoint, fall through to legacy below
     }
 
-    if (resp.status === 404) {
-      // Two structurally different things return 404 here: a genuinely
-      // missing endpoint on a pre-CR-1 host (ASP.NET's default 404, no
-      // body shape to speak of) vs. a real routing rejection from a
-      // current host's /api/triggers/inbound (Results.NotFound(new
-      // {error: "..."}) for "channel not registered" / "no working agent
-      // bound to folder" — see TriggerEndpoints.cs). Falling back to the
-      // legacy path on a routing rejection would silently create an
-      // untagged, non-deduplicated session/chat turn instead of surfacing
-      // that the channel/agent isn't actually set up — losing origin
-      // tagging, which this project treats as an always-win invariant.
-      const responseBody = await resp.text().catch(() => '');
-      let routingError;
-      try {
-        routingError = JSON.parse(responseBody)?.error;
-      } catch {
-        // not JSON — genuinely missing endpoint, fall through to legacy below
-      }
-
-      if (routingError) {
-        ctx.log.warn(`Inbound trigger rejected — routing problem, not a legacy-host case: ${routingError}`);
-        return;
-      }
-
-      // A bare 404 with no JSON error body means the host predates CR-1 and doesn't expose
-      // /api/triggers/inbound at all. There is no fallback for this — ui/host/ai ship together
-      // in this bundled deployment, so a pre-CR-1 host paired with this plugin build isn't a
-      // real deployment shape, only a defensive case. Log and drop.
-      ctx.log.warn('Host does not support /api/triggers/inbound (pre-CR-1 host) — dropping inbound email');
+    if (routingError) {
+      ctx.log.warn(`Inbound trigger rejected — routing problem, not a legacy-host case: ${routingError}`);
       return;
     }
 
-    const responseBody = await resp.text().catch(() => '');
-    ctx.log.warn(`Inbound trigger rejected (${resp.status}): ${responseBody}`);
-  } catch (err) {
-    ctx.log.error('Failed to route inbound email:', err.message);
+    // A bare 404 with no JSON error body means the host predates CR-1 and doesn't expose
+    // /api/triggers/inbound at all. There is no fallback for this — ui/host/ai ship together
+    // in this bundled deployment, so a pre-CR-1 host paired with this plugin build isn't a
+    // real deployment shape, only a defensive case. Log and drop.
+    ctx.log.warn('Host does not support /api/triggers/inbound (pre-CR-1 host) — dropping inbound email');
+    return;
   }
+
+  // Any other 4xx is the host rejecting this payload outright — a retry would get the same
+  // answer, so log it and let the cursor move on.
+  const responseBody = await resp.text().catch(() => '');
+  ctx.log.warn(`Inbound trigger rejected (${resp.status}): ${responseBody}`);
 }
 
 /**
@@ -411,13 +513,16 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-// handleMessage exported for unit testing only (HD-91 follow-through, cycle-647) — start/stop
-// remain the real public API. _setClientForTesting injects a fake IMAP client so handleMessage's
-// downloadTextBody/downloadAttachment calls (which read the module-level `client`) are testable
-// without a real IMAP connection.
+// handleMessage / fetchNewMessages / primeCursor exported for unit testing only (HD-91
+// follow-through, cycle-647; retry ledger, cycle-899) — start/stop remain the real public API.
+// _setClientForTesting injects a fake IMAP client so the calls that read the module-level
+// `client` are testable without a real IMAP connection.
 module.exports = {
   start,
   stop,
   handleMessage,
+  fetchNewMessages,
+  primeCursor,
   _setClientForTesting: (fakeClient) => { client = fakeClient; },
+  _retryTimerPendingForTesting: () => retryTimer !== null,
 };
