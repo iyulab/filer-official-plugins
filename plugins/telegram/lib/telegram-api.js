@@ -28,7 +28,7 @@ async function telegramApi(botToken, method, params) {
     return await telegramApiCall(botToken, method, params);
   } catch (e) {
     if (params.parse_mode && /can't parse entities/i.test(e.message)) {
-      const { parse_mode, ...plain } = params;
+      const { parse_mode: _parseMode, ...plain } = params;
       return await telegramApiCall(botToken, method, plain);
     }
     throw e;

@@ -219,7 +219,7 @@ async function handleUpdate(ctx, botToken, update) {
   } catch (err) {
     // The host is unreachable (typically: not up yet after a boot, or restarting). Transient
     // by definition — propagate so the offset does not move past this update.
-    throw new Error(`Failed to route inbound message (update_id=${update.update_id}): ${err.message}`);
+    throw new Error(`Failed to route inbound message (update_id=${update.update_id}): ${err.message}`, { cause: err });
   }
 
   if (resp.status === 202) {
@@ -245,6 +245,8 @@ async function handleUpdate(ctx, botToken, update) {
     let routingError;
     try {
       routingError = JSON.parse(responseBody)?.error;
+    /* eslint-disable-next-line local/no-silent-catch -- a non-JSON body is itself the answer (the
+       endpoint is missing); the legacy path below reports what happens next. */
     } catch {
       // not JSON — genuinely missing endpoint, fall through to legacy below
     }

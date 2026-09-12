@@ -35,6 +35,8 @@ function detectImageDimensions(buffer, ext) {
         i += 2 + segLen;
       }
     }
+  /* eslint-disable-next-line local/no-silent-catch -- best-effort header parse: null means "dimensions
+     unknown" and the caller reports the image without them; nothing to log, no ctx here. */
   } catch {
     // ignore parse errors
   }

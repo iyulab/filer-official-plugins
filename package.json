@@ -1,0 +1,13 @@
+{
+  "name": "filer-official-plugins",
+  "private": true,
+  "description": "Repository-level tooling for the bundled Filer plugins. Nothing here ships: each plugin under plugins/ is packaged on its own, and this manifest only carries the shared lint.",
+  "scripts": {
+    "lint": "eslint ."
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.10.0",
+    "globals": "^17.12.0"
+  }
+}

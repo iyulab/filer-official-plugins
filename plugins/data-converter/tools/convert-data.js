@@ -97,6 +97,8 @@ module.exports = async function handler(params, ctx) {
   try {
     await ctx.fs.read(outputPath)
     return { success: false, error: `${outputPath} already exists` }
+  /* eslint-disable-next-line local/no-silent-catch -- existence probe: ctx.fs has no exists/stat, so a
+     failed read is the only signal that the target is free; any other read error resurfaces at write. */
   } catch {
     // ENOENT expected — target is free, proceed.
   }

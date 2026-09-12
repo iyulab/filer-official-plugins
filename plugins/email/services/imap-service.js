@@ -455,7 +455,7 @@ async function handleMessage(ctx, message) {
   } catch (err) {
     // The host is unreachable (typically: not up yet after a boot, or restarting). Transient
     // by definition — propagate so the cursor does not move past this message.
-    throw new Error(`Failed to route inbound email (uid=${message.uid}): ${err.message}`);
+    throw new Error(`Failed to route inbound email (uid=${message.uid}): ${err.message}`, { cause: err });
   }
 
   if (resp.status === 202) {
@@ -482,6 +482,8 @@ async function handleMessage(ctx, message) {
     let routingError;
     try {
       routingError = JSON.parse(responseBody)?.error;
+    /* eslint-disable-next-line local/no-silent-catch -- a non-JSON body is itself the answer (the
+       endpoint is missing); the legacy path below reports what happens next. */
     } catch {
       // not JSON — genuinely missing endpoint, fall through to legacy below
     }

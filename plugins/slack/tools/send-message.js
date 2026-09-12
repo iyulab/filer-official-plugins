@@ -10,7 +10,9 @@ export default async function(params, ctx) {
         if (config?.webhookUrl) webhookUrl = config.webhookUrl;
       }
     }
-  } catch { /* fall through to global */ }
+  } catch (e) {
+    ctx.log.warn(`Channel-scoped Slack webhook lookup failed, falling back to the global webhook: ${e.message}`);
+  }
   if (!webhookUrl) webhookUrl = await ctx.settings.get('slack.webhookUrl');
   if (!webhookUrl) throw new Error('Slack Webhook URL not configured. Set it in Settings > Extensions.');
 

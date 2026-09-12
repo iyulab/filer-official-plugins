@@ -109,7 +109,7 @@ async function sendViaSmtp(params, to, from, ctx) {
               socket.write(`MAIL FROM:<${from}>\r\n`);
             }
             break;
-          case 'starttls':
+          case 'starttls': {
             // Upgrade to TLS
             const tlsSocket = tls.connect({ socket, host, servername: host }, () => {
               tlsSocket.write(`EHLO filer\r\n`);
@@ -117,6 +117,7 @@ async function sendViaSmtp(params, to, from, ctx) {
             tlsSocket.on('data', handleTlsData(tlsSocket, { from, to, user, password, params, ctx, resolve, reject }));
             tlsSocket.on('error', reject);
             return;
+          }
           case 'auth':
             socket.write(Buffer.from(user).toString('base64') + '\r\n');
             phase = 'auth-user';
@@ -142,7 +143,7 @@ async function sendViaSmtp(params, to, from, ctx) {
             socket.write(`DATA\r\n`);
             phase = 'data';
             break;
-          case 'data':
+          case 'data': {
             const body = params.html || params.body;
             const contentType = params.html ? 'text/html' : 'text/plain';
             socket.write(
@@ -152,6 +153,7 @@ async function sendViaSmtp(params, to, from, ctx) {
             );
             phase = 'sent';
             break;
+          }
           case 'sent':
             socket.write(`QUIT\r\n`);
             ctx.log.info(`Email sent via SMTP to ${to}`);
@@ -208,7 +210,7 @@ function handleTlsData(socket, opts) {
         socket.write(`DATA\r\n`);
         phase = 'data';
         break;
-      case 'data':
+      case 'data': {
         const body = opts.params.html || opts.params.body;
         const contentType = opts.params.html ? 'text/html' : 'text/plain';
         socket.write(
@@ -218,6 +220,7 @@ function handleTlsData(socket, opts) {
         );
         phase = 'sent';
         break;
+      }
       case 'sent':
         socket.write(`QUIT\r\n`);
         opts.ctx.log.info(`Email sent via SMTP to ${opts.to}`);

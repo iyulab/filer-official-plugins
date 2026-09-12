@@ -10,3 +10,6 @@ plugins/*/src/**/bin/
 plugins/*/node_modules/**/test/
 plugins/*/node_modules/**/tests/
 plugins/*/node_modules/**/__tests__/
+
+# Repository-level lint toolchain (package.json at the root) - never shipped, never vendored.
+/node_modules/

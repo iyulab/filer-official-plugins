@@ -7,7 +7,7 @@ module.exports = async function onFileChangeNotify(event, ctx) {
 
   const format = (await ctx.settings.get('telegram.messageFormat')) || 'Markdown';
 
-  let text = '';
+  let text;
   if (event.isDigest) {
     text = `🌅 ${event.summary}`;
   } else {

@@ -11,7 +11,9 @@ export default async function(params, ctx) {
           if (config?.webhookUrl) webhookUrl = config.webhookUrl;
         }
       }
-    } catch { /* fall through to global */ }
+    } catch (e) {
+      ctx.log.warn(`Channel-scoped Discord webhook lookup failed, falling back to the global webhook: ${e.message}`);
+    }
   }
   if (!webhookUrl) webhookUrl = await ctx.settings.get('discord.webhookUrl');
   if (!webhookUrl) throw new Error('Discord webhook URL not configured.');

@@ -1,4 +1,4 @@
-const { resolveTopicId, telegramApi } = require('../lib/telegram-api');
+const { resolveTopicId } = require('../lib/telegram-api');
 
 module.exports = async function handler(params, ctx) {
   const botToken = await ctx.settings.get('telegram.botToken');

@@ -8,7 +8,9 @@ export default async function(event, ctx) {
     try {
       const config = await ctx.channels.getIntegrationConfig(event.channelId, 'discord');
       if (config?.webhookUrl) webhookUrl = config.webhookUrl;
-    } catch { /* fall through to global */ }
+    } catch (e) {
+      ctx.log.warn(`Channel-scoped Discord webhook lookup failed, falling back to the global webhook: ${e.message}`);
+    }
   }
   if (!webhookUrl) webhookUrl = await ctx.settings.get('discord.webhookUrl');
   if (!webhookUrl) return;
