@@ -1,7 +1,7 @@
 {
   "name": "document-essentials",
   "displayName": "Document Essentials",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "AI-powered document analysis: summarize, explain, translate, rewrite, and extract insights from documents",
   "author": { "name": "iyulab", "url": "https://github.com/iyulab" },
   "repository": "https://github.com/iyulab/filer-official-plugins",
@@ -23,8 +23,8 @@
   "contributes": {
     "tools": [
       {
-        "id": "read_document",
-        "title": "Read Document",
+        "id": "read_text_document",
+        "title": "Read Text Document",
         "description": "Read the text content of a document file. Supports .txt, .md, .html, .xml, .json, .csv, .yaml, .log, and other text formats. Returns the full content as a string.",
         "schema": "./tools/read-document.schema.json",
         "handler": "./tools/read-document.js"
@@ -110,6 +110,7 @@
         "scope": "single-file",
         "fileTypes": ["document"],
         "prompt": "./prompts/rewrite.md",
+        "toolScope": "read-only",
         "params": [
           {
             "id": "style",
@@ -170,7 +171,8 @@
         "description": "Generate a structured table of contents for the document",
         "scope": "single-file",
         "fileTypes": ["document"],
-        "prompt": "./prompts/generate-toc.md"
+        "prompt": "./prompts/generate-toc.md",
+        "toolScope": "read-only"
       }
     ]
   }

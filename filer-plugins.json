@@ -57,7 +57,7 @@
       "name": "document-essentials",
       "source": "./plugins/document-essentials",
       "description": "AI-powered document analysis: summarize, explain, translate, rewrite, and extract insights from documents",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "category": "document",
       "tags": ["summary", "explain", "translate", "rewrite", "text", "pdf", "docx", "md", "document"]
     },

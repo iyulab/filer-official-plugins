@@ -80,7 +80,8 @@
         "description": "Generate unit tests for the code",
         "scope": "single-file",
         "fileTypes": ["code"],
-        "prompt": "./prompts/generate-tests.md"
+        "prompt": "./prompts/generate-tests.md",
+        "toolScope": "read-only"
       },
       {
         "id": "generate-docs",
