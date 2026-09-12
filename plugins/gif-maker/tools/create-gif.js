@@ -65,13 +65,8 @@ module.exports = async function handler(params, ctx) {
     return { success: false, error: `Too many images: ${paths.length}. Maximum is ${MAX_FRAMES}` }
   }
 
-  try {
-    await ctx.fs.read(outputPath)
+  if (await targetExists(ctx, outputPath)) {
     return { success: false, error: `${outputPath} already exists` }
-  /* eslint-disable-next-line local/no-silent-catch -- existence probe: ctx.fs has no exists/stat, so a
-     failed read is the only signal that the target is free; any other read error resurfaces at write. */
-  } catch {
-    // ENOENT expected — target is free, proceed.
   }
 
   const frames = []
@@ -123,4 +118,19 @@ module.exports = async function handler(params, ctx) {
   await ctx.fs.write(outputPath, outputBuffer)
 
   return { success: true, path: outputPath, frameCount: frames.length, width, height }
+}
+
+// Hosts from 2026-09-12 on expose ctx.fs.exists; older hosts do not (the packaged app fetches these
+// plugins at the repository's HEAD, so a plugin must not assume a context method its host may lack).
+// On an older host the only probe is a read: a failed read means the target is free.
+async function targetExists(ctx, path) {
+  if (typeof ctx.fs.exists === 'function') return ctx.fs.exists(path)
+  try {
+    await ctx.fs.read(path)
+    return true
+  /* eslint-disable-next-line local/no-silent-catch -- read-as-probe on a host without ctx.fs.exists:
+     a failed read means "free"; any other read error resurfaces at write. */
+  } catch {
+    return false
+  }
 }
