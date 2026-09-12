@@ -2,3 +2,11 @@
 # points at) is deliberately NOT ignored here, since this repo ships it directly via git.
 **/obj/
 plugins/*/src/**/bin/
+
+# Vendored dependency trees (plugins/*/node_modules) ship via git, but a dependency's own test
+# suite is not part of what runs at runtime — and test fixtures (mock packages, synthetic
+# payloads) are exactly the files antivirus heuristics flag, which then quarantines a tracked
+# file and dirties the tree. Keep the runtime files, drop the tests.
+plugins/*/node_modules/**/test/
+plugins/*/node_modules/**/tests/
+plugins/*/node_modules/**/__tests__/
