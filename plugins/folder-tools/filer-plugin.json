@@ -17,6 +17,9 @@
       "read": {
         "parameter": true,
         "deny": ["**/.env", "**/.env.*", "**/.ssh/**", "**/*.pem", "**/*.key"]
+      },
+      "list": {
+        "parameter": true
       }
     }
   },
