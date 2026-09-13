@@ -32,16 +32,24 @@ plugins/my-plugin/
   "runtime": "node",
   "engines": { "filer": ">=0.2.0" },
   "bundled": true,
+  "capabilities": ["describe-image"],
 
   "contributes": {
     "settings": { ... },
     "tools": [ ... ],
+    "actions": [ ... ],
     "hooks": { ... },
     "commands": [ ... ],
     "views": [ ... ]
-  }
+  },
+
+  "permissions": { "fs": { "read": { "parameter": true, "deny": ["**/.env", "**/.env.*"] } } }
 }
 ```
+
+The field-by-field rules — what the loader's `validateManifest` accepts and rejects for every block above,
+including `runtime: "process"` limits, `permissions`, and the tool-result envelope — live in the Filer
+repository's **`docs/PLUGIN-MANIFEST.md`**. This guide shows the shapes; that page is the contract.
 
 ## Plugin Context (ctx)
 
@@ -89,31 +97,84 @@ Secret settings are encrypted with Electron safeStorage.
 
 ## Tools
 
-Tools are exposed as MCP tools to the AI agent:
+Tools are exposed as MCP tools to the AI agent. A tool is declared by **`id`** (the MCP tool name — no
+dots), `title`, `description` (what the model reads when choosing a tool), a **`schema` file** for its
+arguments, and — for `runtime: "node"` — a `handler` module:
 
 ```json
 "tools": [{
-  "name": "my_tool",
-  "description": "What this tool does",
-  "handler": "./tools/my-tool.js",
-  "parameters": {
-    "type": "object",
-    "properties": {
-      "input": { "type": "string", "description": "Input value" }
-    },
-    "required": ["input"]
-  }
+  "id": "my_tool",
+  "title": "My Tool",
+  "description": "What this tool does, written for the model that will decide whether to call it",
+  "schema": "./tools/my-tool.schema.json",
+  "handler": "./tools/my-tool.js"
 }]
 ```
 
-Handler:
+`./tools/my-tool.schema.json` — a JSON Schema for the arguments (`format: "file-path"` marks a path the
+app's permission checks apply to):
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "path": { "type": "string", "format": "file-path", "description": "Absolute path to the input file" },
+    "verbose": { "type": "boolean", "description": "Include extra detail", "default": false }
+  },
+  "required": ["path"]
+}
+```
+
+`./tools/my-tool.js` — the loader accepts either module style (`export default` or `module.exports`):
+
 ```js
-export default async function(params, ctx) {
+module.exports = async function handler(params, ctx) {
   const apiKey = await ctx.settings.get('my-plugin.apiKey');
   // ... do work ...
   return { success: true, result: '...' };
 }
 ```
+
+A string return reaches the agent verbatim; anything else is `JSON.stringify`'d into one text block. To
+return an image (or several typed blocks), return an MCP content envelope
+`{ content: [{ type: "text", text }, { type: "image", data: <base64>, mimeType: "image/png" }] }` — it is
+forwarded as-is. Under `runtime: "process"` there is no `handler`: the tool's own `id` is called over the
+process transport. A manifest that still uses `name` + an inline `parameters` object is rejected by the
+validator with a migration hint — every plugin in this repository uses the shape above.
+
+## Actions
+
+Actions are the right-click "AI actions" on files and folders. The default kind runs a prompt template
+as an agent turn; `kind: "tool"` invokes one of your tools directly, with no model involved:
+
+```json
+"actions": [
+  {
+    "id": "summarize-document",
+    "title": "Summarize",
+    "description": "Summarize the selected document",
+    "scope": "single-file",
+    "fileTypes": ["document"],
+    "prompt": "./prompts/summarize.md",
+    "toolScope": "read-only"
+  },
+  {
+    "id": "convert-to-pdf",
+    "title": "Convert to PDF",
+    "description": "Convert the selected file to PDF",
+    "scope": ["single-file", "multi-file"],
+    "kind": "tool",
+    "toolId": "convert_document"
+  }
+]
+```
+
+`toolScope: "read-only"` (prompt kind only) is enforced by the host, not requested of the model: the turn
+gets only tools that read the folder and its knowledge — nothing that writes, runs a command, reaches the
+network, or belongs to a plugin. Use it for any action whose promise is "reads and answers". A `kind: "tool"`
+action must not carry `prompt` or `toolScope`, and its `toolId` must name a tool in the same manifest.
+Dialog inputs (`params[]`), batch mode for multi-file tools, `generate` buttons and `hidden` actions are
+documented on the `docs/PLUGIN-MANIFEST.md` page named above.
 
 ## Hooks
 
