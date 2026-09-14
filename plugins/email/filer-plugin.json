@@ -148,7 +148,7 @@
       }
     ],
     "hooks": {
-      "onAppReady": "./hooks/initialize.js",
+      "onRuntimeReady": "./hooks/initialize.js",
       "onAgentComplete": "./hooks/notify-complete.js",
       "onChannelChanged": "./hooks/on-channel-changed.js"
     }

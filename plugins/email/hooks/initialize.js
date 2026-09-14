@@ -1,6 +1,6 @@
 const imapService = require('../services/imap-service.js');
 
-module.exports = async function onAppReady(event, ctx) {
+module.exports = async function onRuntimeReady(event, ctx) {
   try {
     await imapService.start(ctx);
   } catch (err) {

@@ -142,7 +142,7 @@
       }
     ],
     "hooks": {
-      "onAppReady": "./hooks/initialize.js",
+      "onRuntimeReady": "./hooks/initialize.js",
       "onAgentComplete": "./hooks/notify-complete.js",
       "onFileChangeNotify": "./hooks/on-file-change-notify.js",
       "onSessionMessage": "./hooks/on-session-message.js",
