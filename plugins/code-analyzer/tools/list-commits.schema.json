@@ -1,0 +1,29 @@
+{
+  "type": "object",
+  "properties": {
+    "folderPath": {
+      "type": "string",
+      "format": "file-path",
+      "description": "Absolute path to the folder whose commit history to read. Only commits that touch this folder (and its subfolders) are listed, even when the Git repository is larger."
+    },
+    "limit": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 200,
+      "description": "Maximum number of commits to return, newest first. Default 30, at most 200."
+    },
+    "since": {
+      "type": "string",
+      "description": "Optional ISO date (e.g. 2026-09-01 or 2026-09-01T09:00:00Z): only commits made after it."
+    },
+    "ref": {
+      "type": "string",
+      "description": "Optional branch or tag name to read history from. Defaults to HEAD (the checked-out branch)."
+    },
+    "path": {
+      "type": "string",
+      "description": "Optional file or subfolder path, relative to folderPath, to narrow the history to."
+    }
+  },
+  "required": ["folderPath"]
+}

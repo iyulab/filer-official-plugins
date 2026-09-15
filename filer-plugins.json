@@ -80,10 +80,10 @@
     {
       "name": "code-analyzer",
       "source": "./plugins/code-analyzer",
-      "description": "AI-powered code review: explain, find bugs, suggest refactoring, and generate tests and documentation",
-      "version": "0.1.0",
+      "description": "AI-powered code review: explain, find bugs, suggest refactoring, generate tests and documentation, and read the folder's Git history",
+      "version": "0.2.0",
       "category": "code",
-      "tags": ["code", "review", "bugs", "refactor", "tests", "docs"]
+      "tags": ["code", "review", "bugs", "refactor", "tests", "docs", "git", "history"]
     },
     {
       "name": "data-analyzer",

@@ -1,12 +1,12 @@
 {
   "name": "code-analyzer",
   "displayName": "Code Analyzer",
-  "version": "0.1.0",
-  "description": "AI-powered code review: explain, find bugs, suggest refactoring, and generate tests and documentation",
+  "version": "0.2.0",
+  "description": "AI-powered code review: explain, find bugs, suggest refactoring, generate tests and documentation, and read the folder's Git history",
   "author": { "name": "iyulab", "url": "https://github.com/iyulab" },
   "repository": "https://github.com/iyulab/filer-official-plugins",
   "license": "MIT",
-  "keywords": ["code", "review", "bugs", "refactor", "tests", "docs"],
+  "keywords": ["code", "review", "bugs", "refactor", "tests", "docs", "git", "history"],
   "category": "code",
   "runtime": "node",
   "engines": { "filer": ">=0.2.0" },
@@ -38,6 +38,22 @@
         "description": "List all code files in a folder. Returns file paths filtered by programming language extensions. Optionally specify extensions to filter (e.g. ['js', 'ts']). Does not recurse into subfolders.",
         "schema": "./tools/list-code-files.schema.json",
         "handler": "./tools/list-code-files.js"
+      },
+      {
+        "id": "list_commits",
+        "title": "List Commits",
+        "description": "List the Git commit history of a folder, newest first: hash, author, date, subject, body and the number of files/lines each commit changed. Only commits that touch the folder (and its subfolders) are listed, even inside a larger repository. Optional limit (default 30), since (ISO date), ref (branch or tag) and path (file or subfolder). Use read_commit for one commit's files and diff. Requires Git on the machine.",
+        "schema": "./tools/list-commits.schema.json",
+        "handler": "./tools/list-commits.js",
+        "timeout": "30s"
+      },
+      {
+        "id": "read_commit",
+        "title": "Read Commit",
+        "description": "Read one Git commit by its hash (from list_commits): message, author, date, the files it changed within the folder (status, lines added/removed) and the diff (cut at maxDiffChars, default 20000, with a truncated flag). Files and diff are limited to the folder and its subfolders. Requires Git on the machine.",
+        "schema": "./tools/read-commit.schema.json",
+        "handler": "./tools/read-commit.js",
+        "timeout": "30s"
       }
     ],
     "actions": [

@@ -1,0 +1,21 @@
+{
+  "type": "object",
+  "properties": {
+    "folderPath": {
+      "type": "string",
+      "format": "file-path",
+      "description": "Absolute path to the folder the commit belongs to. The files and diff are limited to this folder (and its subfolders), even when the Git repository is larger."
+    },
+    "hash": {
+      "type": "string",
+      "description": "The commit id (full or abbreviated hexadecimal), as returned by list_commits."
+    },
+    "maxDiffChars": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 200000,
+      "description": "Maximum number of characters of the diff to return. Default 20000; the result says whether it was cut."
+    }
+  },
+  "required": ["folderPath", "hash"]
+}
