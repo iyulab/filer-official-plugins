@@ -1,3 +1,4 @@
+using Filer.PluginHost;
 using System.Text.Json;
 using FluentAssertions;
 using MediaRedactor.PluginHost;
@@ -12,7 +13,7 @@ public class StdioJsonRpcTests
     {
         var input = new StringReader("{\"id\":\"nested-1\",\"result\":\"the region is at (10,20,100,50)\"}\n");
         using var output = new StringWriter();
-        var rpc = new StdioJsonRpc(input, output);
+        var rpc = new StdioJsonRpc(input, output, PluginHostJsonContext.Default);
 
         var result = await rpc.SendRequestAsync("ai.complete", new Dictionary<string, object?> { ["prompt"] = "hi" });
 
@@ -24,7 +25,7 @@ public class StdioJsonRpcTests
     {
         var input = new StringReader("{\"id\":\"nested-1\",\"result\":\"ok\"}\n");
         using var output = new StringWriter();
-        var rpc = new StdioJsonRpc(input, output);
+        var rpc = new StdioJsonRpc(input, output, PluginHostJsonContext.Default);
 
         await rpc.SendRequestAsync("ai.complete", new Dictionary<string, object?>
         {
@@ -42,7 +43,7 @@ public class StdioJsonRpcTests
     public async Task SendRequestAsync_UnsupportedParamType_Throws()
     {
         using var output = new StringWriter();
-        var rpc = new StdioJsonRpc(new StringReader(""), output);
+        var rpc = new StdioJsonRpc(new StringReader(""), output, PluginHostJsonContext.Default);
 
         var act = async () => await rpc.SendRequestAsync("ai.complete", new Dictionary<string, object?> { ["x"] = 42 });
 

@@ -1,0 +1,25 @@
+<Project>
+  <!--
+    Source shared by the .NET plugin hosts (video-composer, media-redactor, transcript-refiner), compiled into each
+    host rather than referenced as an assembly: every host is still one NativeAOT executable that ships alone in its
+    plugin's bin/, and a fix to the stdio protocol lands in all of them from one file.
+
+    Import from a host's csproj:  <Import Project="..\..\..\..\shared\dotnet\PluginHost.Shared.props" />
+    Always included: StdioJsonRpc.cs (the host <-> Filer stdio protocol).
+    Opt in with properties set before the import:
+      FilerPluginHostAiClient=true   HostAiChatClient.cs — an IChatClient over the host's ai.complete callback
+                                     (needs Microsoft.Extensions.AI.Abstractions).
+      FilerPluginHostJobObject=true  WindowsJobObject.cs — child processes die with the host (uses LibraryImport,
+                                     so it also turns on AllowUnsafeBlocks).
+  -->
+  <PropertyGroup Condition="'$(FilerPluginHostJobObject)' == 'true'">
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)StdioJsonRpc.cs" Link="Shared\StdioJsonRpc.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)HostAiChatClient.cs" Link="Shared\HostAiChatClient.cs"
+             Condition="'$(FilerPluginHostAiClient)' == 'true'" />
+    <Compile Include="$(MSBuildThisFileDirectory)WindowsJobObject.cs" Link="Shared\WindowsJobObject.cs"
+             Condition="'$(FilerPluginHostJobObject)' == 'true'" />
+  </ItemGroup>
+</Project>

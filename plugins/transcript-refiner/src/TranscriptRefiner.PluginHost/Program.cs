@@ -1,3 +1,4 @@
+using Filer.PluginHost;
 using System.Text;
 using TranscriptRefiner.PluginHost;
 
@@ -6,7 +7,7 @@ using TranscriptRefiner.PluginHost;
 var stdin = new StreamReader(Console.OpenStandardInput(), new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
 var stdout = new StreamWriter(Console.OpenStandardOutput(), new UTF8Encoding(encoderShouldEmitUTF8Identifier: false)) { AutoFlush = true };
 
-var rpc = new StdioJsonRpc(stdin, stdout);
+var rpc = new StdioJsonRpc(stdin, stdout, PluginHostJsonContext.Default);
 var request = rpc.ReadOuterRequest();
 
 try

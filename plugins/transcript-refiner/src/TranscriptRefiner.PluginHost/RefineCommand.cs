@@ -31,7 +31,7 @@ internal static class RefineCommand
             Path.GetFileName(path), result.Cues.Count,
             [.. result.Applied.Select(c => Describe(c, cues))],
             [.. result.Rejected.Select(c => Describe(c, cues))]);
-        await File.WriteAllTextAsync(changesPath, JsonSerializer.Serialize(changes, typeof(RefineChangesFile), StdioJsonRpc.ChangesFileOptions), ct);
+        await File.WriteAllTextAsync(changesPath, JsonSerializer.Serialize(changes, typeof(RefineChangesFile), PluginHostJson.ChangesFileOptions), ct);
 
         return new RefineTranscriptResultPayload(
             true, outputPath, changesPath, result.Cues.Count,

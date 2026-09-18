@@ -1,3 +1,4 @@
+using Filer.PluginHost;
 using PulsaRedact;
 
 namespace MediaRedactor.PluginHost;

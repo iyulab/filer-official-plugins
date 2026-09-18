@@ -1,3 +1,4 @@
+using Filer.PluginHost;
 using System.Text.Json;
 using FluentAssertions;
 using VideoComposer.PluginHost;
@@ -12,7 +13,7 @@ public class StdioJsonRpcTests
     {
         var input = new StringReader("{\"id\":\"nested-1\",\"result\":\"a drafted caption\"}\n");
         using var output = new StringWriter();
-        var rpc = new StdioJsonRpc(input, output);
+        var rpc = new StdioJsonRpc(input, output, PluginHostJsonContext.Default);
 
         var result = await rpc.SendRequestAsync("ai.complete", new Dictionary<string, object?> { ["prompt"] = "hi" });
 
@@ -27,7 +28,7 @@ public class StdioJsonRpcTests
     {
         var input = new StringReader("{\"id\":\"nested-1\",\"error\":\"no model configured\"}\n");
         using var output = new StringWriter();
-        var rpc = new StdioJsonRpc(input, output);
+        var rpc = new StdioJsonRpc(input, output, PluginHostJsonContext.Default);
 
         var act = async () => await rpc.SendRequestAsync("ai.complete", new Dictionary<string, object?>());
 
@@ -38,7 +39,7 @@ public class StdioJsonRpcTests
     public void ReadOuterRequest_ParsesTheInitialToolCall()
     {
         var input = new StringReader("{\"id\":\"outer-1\",\"method\":\"compose_video\",\"params\":{\"outputPath\":\"out.mp4\"}}\n");
-        var rpc = new StdioJsonRpc(input, new StringWriter());
+        var rpc = new StdioJsonRpc(input, new StringWriter(), PluginHostJsonContext.Default);
 
         var request = rpc.ReadOuterRequest();
 
@@ -51,7 +52,7 @@ public class StdioJsonRpcTests
     public void WriteFinalResult_WritesAResponseLineWithNoMethod()
     {
         using var output = new StringWriter();
-        var rpc = new StdioJsonRpc(new StringReader(""), output);
+        var rpc = new StdioJsonRpc(new StringReader(""), output, PluginHostJsonContext.Default);
 
         rpc.WriteFinalResult("outer-1", new { success = true, outputPath = "out.mp4" });
 
@@ -65,7 +66,7 @@ public class StdioJsonRpcTests
     public void WriteFinalError_WritesAnErrorResponseLine()
     {
         using var output = new StringWriter();
-        var rpc = new StdioJsonRpc(new StringReader(""), output);
+        var rpc = new StdioJsonRpc(new StringReader(""), output, PluginHostJsonContext.Default);
 
         rpc.WriteFinalError("outer-1", "boom");
 

@@ -10,7 +10,10 @@
     <InvariantGlobalization>true</InvariantGlobalization>
     <AssemblyName>TranscriptRefiner.PluginHost</AssemblyName>
     <DebugType>None</DebugType>
+    <FilerPluginHostAiClient>true</FilerPluginHostAiClient>
   </PropertyGroup>
+
+  <Import Project="..\..\..\..\shared\dotnet\PluginHost.Shared.props" />
 
   <ItemGroup>
     <PackageReference Include="PulsaTranscript.SDK" Version="0.1.0" />

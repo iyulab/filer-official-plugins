@@ -1,13 +1,13 @@
 using System.Runtime.InteropServices;
 
-namespace MediaRedactor.PluginHost;
+namespace Filer.PluginHost;
 
 /// <summary>
 /// On Windows, the host (filer-ui's `plugin-process-runtime-manager.ts`) can only stop this
 /// process by terminating it — Node's `child.kill()` never delivers an actual POSIX signal on
 /// Windows regardless of the signal argument passed, it always calls TerminateProcess. That ends
-/// this process, but not `ffmpeg.exe`, a process this one spawns as its own child: Windows does
-/// not cascade termination to a killed process's children, so ffmpeg keeps rendering and can still
+/// this process, but not a process this one spawns as its own child (a media host's `ffmpeg.exe`): Windows
+/// does not cascade termination to a killed process's children, so the child keeps working and can still
 /// write the output file after the caller has already reported a timeout failure — and a retry
 /// then collides with this plugin's own "output already exists" refusal.
 ///
@@ -17,7 +17,7 @@ namespace MediaRedactor.PluginHost;
 /// sets) — with JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE, the kernel kills every process still in the
 /// job the moment the job's last handle closes, which happens automatically when Windows tears
 /// down this process's own handle table on exit, including an external TerminateProcess. No code
-/// in this process needs to run at that moment for ffmpeg to die with it.
+/// in this process needs to run at that moment for the child to die with it.
 /// </summary>
 internal static partial class WindowsJobObject
 {
@@ -26,7 +26,7 @@ internal static partial class WindowsJobObject
 
     /// <summary>
     /// No-op on any platform other than Windows, and best-effort even there — a failure here means
-    /// only that a future timeout-kill can orphan ffmpeg as before, not that this process can't run.
+    /// only that a future timeout-kill can orphan a child process as before, not that this process can't run.
     /// </summary>
     public static void EnsureChildProcessesDieWithThisProcess()
     {
@@ -35,7 +35,7 @@ internal static partial class WindowsJobObject
         var job = CreateJobObjectW(IntPtr.Zero, null);
         if (job == IntPtr.Zero)
         {
-            Console.Error.WriteLine($"[WindowsJobObject] CreateJobObjectW failed (Win32 error {Marshal.GetLastPInvokeError()}) — a future timeout-kill may orphan ffmpeg.");
+            Console.Error.WriteLine($"[WindowsJobObject] CreateJobObjectW failed (Win32 error {Marshal.GetLastPInvokeError()}) — a future timeout-kill may orphan a child process.");
             return;
         }
 
@@ -50,12 +50,12 @@ internal static partial class WindowsJobObject
             Marshal.StructureToPtr(info, infoPtr, fDeleteOld: false);
             if (!SetInformationJobObject(job, JobObjectExtendedLimitInformation, infoPtr, (uint)size))
             {
-                Console.Error.WriteLine($"[WindowsJobObject] SetInformationJobObject failed (Win32 error {Marshal.GetLastPInvokeError()}) — a future timeout-kill may orphan ffmpeg.");
+                Console.Error.WriteLine($"[WindowsJobObject] SetInformationJobObject failed (Win32 error {Marshal.GetLastPInvokeError()}) — a future timeout-kill may orphan a child process.");
                 return;
             }
             if (!AssignProcessToJobObject(job, GetCurrentProcess()))
             {
-                Console.Error.WriteLine($"[WindowsJobObject] AssignProcessToJobObject failed (Win32 error {Marshal.GetLastPInvokeError()}) — a future timeout-kill may orphan ffmpeg.");
+                Console.Error.WriteLine($"[WindowsJobObject] AssignProcessToJobObject failed (Win32 error {Marshal.GetLastPInvokeError()}) — a future timeout-kill may orphan a child process.");
             }
         }
         finally

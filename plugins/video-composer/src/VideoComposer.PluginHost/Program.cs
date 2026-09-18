@@ -1,3 +1,4 @@
+using Filer.PluginHost;
 using System.Text;
 using PulsaVideoCompose;
 using VideoComposer.PluginHost;
@@ -14,7 +15,7 @@ WindowsJobObject.EnsureChildProcessesDieWithThisProcess();
 var stdin = new StreamReader(Console.OpenStandardInput(), new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
 var stdout = new StreamWriter(Console.OpenStandardOutput(), new UTF8Encoding(encoderShouldEmitUTF8Identifier: false)) { AutoFlush = true };
 
-var rpc = new StdioJsonRpc(stdin, stdout);
+var rpc = new StdioJsonRpc(stdin, stdout, PluginHostJsonContext.Default);
 var request = rpc.ReadOuterRequest();
 var ffmpegBinaryFolder = Path.Combine(AppContext.BaseDirectory, "ffmpeg");
 

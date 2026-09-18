@@ -27,7 +27,7 @@ public class PluginHostJsonContextTests
     [Fact]
     public void The_changes_file_serializes_through_the_generated_context_and_keeps_Korean_readable()
     {
-        var options = new JsonSerializerOptions(StdioJsonRpc.ChangesFileOptions) { TypeInfoResolver = PluginHostJsonContext.Default };
+        var options = new JsonSerializerOptions(PluginHostJson.ChangesFileOptions) { TypeInfoResolver = PluginHostJsonContext.Default };
         var file = new RefineChangesFile("a.vtt", 2,
             [new RefinedChange(1, "00:00:00.000", "주간 회를", "주간 회의를", "corrected")], []);
 

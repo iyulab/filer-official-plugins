@@ -1,9 +1,8 @@
 using System.Text;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 
-namespace VideoComposer.PluginHost;
+namespace Filer.PluginHost;
 
 /// <summary>
 /// Thin wrapper over a request's `params` object. JsonElement only indexes by int, so this adds a
@@ -19,45 +18,32 @@ public readonly struct JsonParams(JsonElement element)
 
 public sealed record OuterRequest(string Id, string Method, JsonParams Params);
 
-internal sealed record ComposeVideoResultPayload(
-    [property: JsonPropertyName("success")] bool Success,
-    [property: JsonPropertyName("outputPath")] string? OutputPath,
-    [property: JsonPropertyName("srtPath")] string? SrtPath);
-
-internal sealed record DraftCaptionsResultPayload(
-    [property: JsonPropertyName("success")] bool Success,
-    [property: JsonPropertyName("captions")] IReadOnlyList<string> Captions);
-
-[JsonSerializable(typeof(ComposeVideoResultPayload))]
-[JsonSerializable(typeof(DraftCaptionsResultPayload))]
-internal sealed partial class PluginHostJsonContext : JsonSerializerContext
-{
-}
-
 /// <summary>
 /// The JSON-RPC-shaped stdio protocol between the host and this process: newline-delimited JSON, a
 /// `method`-bearing line is a request (either direction), a `result`/`error`-bearing line with no
-/// `method` is the response to a previously-sent request. This adapter is the ONLY place in this
-/// plugin that speaks it.
+/// `method` is the response to a previously-sent request. This adapter is the ONLY place in a
+/// plugin host that speaks it — shared source, compiled into each host (`PluginHost.Shared.props`).
 ///
 /// NativeAOT disables reflection-based System.Text.Json serialization by default
 /// (PublishAot=true sets JsonSerializerIsReflectionEnabledByDefault=false). A plain
 /// JsonSerializer.Serialize(anonymousObject) call builds without error under that setting
 /// (the trimmer-analysis warnings, IL2026/IL3050, are warnings, not build errors) but throws at
-/// runtime once the AOT-published executable actually runs. The two result payload types below are
-/// therefore serialized through a source-generated JsonSerializerContext when reflection-based
-/// serialization is unavailable, and through the ordinary reflection-based resolver otherwise (so
-/// `dotnet test`, which always runs with reflection enabled, still exercises normal
-/// System.Text.Json behavior).
+/// runtime once the AOT-published executable actually runs. Each host therefore passes its own
+/// source-generated JsonSerializerContext (<paramref name="resultTypes"/>), which serializes its result
+/// payloads when reflection-based serialization is unavailable; the ordinary reflection-based resolver
+/// is used otherwise (so `dotnet test`, which always runs with reflection enabled, still exercises
+/// normal System.Text.Json behavior).
 /// </summary>
-public sealed class StdioJsonRpc(TextReader input, TextWriter output)
+public sealed class StdioJsonRpc(TextReader input, TextWriter output, IJsonTypeInfoResolver resultTypes)
 {
-    private static readonly JsonSerializerOptions ResultOptions = new()
-    {
-        TypeInfoResolver = JsonSerializer.IsReflectionEnabledByDefault
-            ? new DefaultJsonTypeInfoResolver()
-            : PluginHostJsonContext.Default
-    };
+    private readonly JsonSerializerOptions _resultOptions = new() { TypeInfoResolver = ResolverFor(resultTypes) };
+
+    /// <summary>
+    /// The resolver a host's own serialization should use: reflection when it is enabled, the host's
+    /// source-generated context under NativeAOT. The same rule the result channel follows.
+    /// </summary>
+    public static IJsonTypeInfoResolver ResolverFor(IJsonTypeInfoResolver sourceGenerated) =>
+        JsonSerializer.IsReflectionEnabledByDefault ? new DefaultJsonTypeInfoResolver() : sourceGenerated;
 
     public OuterRequest ReadOuterRequest()
     {
@@ -93,9 +79,15 @@ public sealed class StdioJsonRpc(TextReader input, TextWriter output)
                         case string s:
                             writer.WriteString(key, s);
                             break;
+                        case IReadOnlyList<string> list:
+                            writer.WritePropertyName(key);
+                            writer.WriteStartArray();
+                            foreach (var item in list) writer.WriteStringValue(item);
+                            writer.WriteEndArray();
+                            break;
                         default:
                             throw new NotSupportedException(
-                                $"Nested request param '{key}' has unsupported type '{value.GetType()}' — only string values are supported over this channel.");
+                                $"Nested request param '{key}' has unsupported type '{value.GetType()}' — only string and string-list values are supported over this channel.");
                     }
                 }
                 writer.WriteEndObject();
@@ -122,7 +114,7 @@ public sealed class StdioJsonRpc(TextReader input, TextWriter output)
             writer.WriteStartObject();
             writer.WriteString("id", id);
             writer.WritePropertyName("result");
-            JsonSerializer.Serialize(writer, result, result.GetType(), ResultOptions);
+            JsonSerializer.Serialize(writer, result, result.GetType(), _resultOptions);
             writer.WriteEndObject();
         }
         output.WriteLine(Encoding.UTF8.GetString(stream.ToArray()));
