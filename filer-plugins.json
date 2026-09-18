@@ -156,6 +156,14 @@
       "version": "0.1.0",
       "category": "developer",
       "tags": ["web", "app", "check", "browser"]
+    },
+    {
+      "name": "transcript-refiner",
+      "source": "./plugins/transcript-refiner",
+      "description": "Fix what speech-to-text misheard in a transcript, keeping every segment and timing",
+      "version": "0.1.0",
+      "category": "media",
+      "tags": ["transcript", "vtt", "speech-to-text", "correction"]
     }
   ]
 }

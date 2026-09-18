@@ -1,0 +1,26 @@
+{
+  "type": "object",
+  "properties": {
+    "path": {
+      "type": "string",
+      "format": "file-path",
+      "description": "The WebVTT transcript (.vtt) to refine."
+    },
+    "outputPath": {
+      "type": "string",
+      "format": "file-path",
+      "description": "Where to write the refined transcript (.vtt). Must not already exist — e.g. the source's name with .clean.vtt."
+    },
+    "changesPath": {
+      "type": "string",
+      "format": "file-path",
+      "description": "Where to write the list of applied and rejected changes (.json). Must not already exist."
+    },
+    "glossaryPath": {
+      "type": "string",
+      "format": "file-path",
+      "description": "Optional Markdown file listing the correct spellings of names and terms in the recording (one per bullet or line)."
+    }
+  },
+  "required": ["path", "outputPath", "changesPath"]
+}

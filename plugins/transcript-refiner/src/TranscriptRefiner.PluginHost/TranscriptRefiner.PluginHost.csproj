@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <PublishAot>true</PublishAot>
+    <SelfContained>true</SelfContained>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <AssemblyName>TranscriptRefiner.PluginHost</AssemblyName>
+    <DebugType>None</DebugType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="PulsaTranscript.SDK" Version="0.1.0" />
+    <PackageReference Include="Microsoft.Extensions.AI.Abstractions" Version="10.7.0" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,70 @@
+{
+  "name": "transcript-refiner",
+  "displayName": "Transcript Refiner",
+  "version": "0.1.0",
+  "description": "Fix what speech-to-text misheard in a transcript (.vtt) with your own model — every segment and timing kept, every change listed",
+  "author": {
+    "name": "iyulab",
+    "url": "https://github.com/iyulab"
+  },
+  "repository": "https://github.com/iyulab/filer-official-plugins",
+  "license": "MIT",
+  "keywords": [
+    "transcript",
+    "subtitles",
+    "vtt",
+    "speech-to-text",
+    "correction",
+    "meeting"
+  ],
+  "category": "media",
+  "runtime": "process",
+  "command": "./bin/TranscriptRefiner.PluginHost.exe",
+  "engines": {
+    "filer": ">=0.5.0"
+  },
+  "bundled": false,
+  "capabilities": [
+    "refine-transcript"
+  ],
+  "permissions": {
+    "fs": {
+      "read": {
+        "parameter": true,
+        "deny": [
+          "**/.env",
+          "**/.env.*",
+          "**/.ssh/**",
+          "**/*.pem",
+          "**/*.key"
+        ]
+      },
+      "write": {
+        "parameter": true,
+        "deny": [
+          "**/.env",
+          "**/.env.*",
+          "**/.ssh/**",
+          "**/*.pem",
+          "**/*.key"
+        ]
+      }
+    },
+    "ai": {
+      "complete": true
+    },
+    "execution": {
+      "timeout": "300s"
+    }
+  },
+  "contributes": {
+    "tools": [
+      {
+        "id": "refine_transcript",
+        "title": "Refine Transcript (AI)",
+        "description": "Correct speech-to-text mistakes in a WebVTT transcript using the user's own configured model: misheard words, spacing, misspelled names (an optional glossary .md lists the right spellings). Every segment and every timing is kept; a segment that is meaningless becomes [unclear]; a correction that changes too much is not applied but listed as rejected, with the original, for a person to decide. Requires path (.vtt), outputPath (the refined .vtt) and changesPath (a .json listing applied and rejected changes). Refuses to overwrite existing files.",
+        "schema": "./tools/refine-transcript.schema.json"
+      }
+    ]
+  }
+}
