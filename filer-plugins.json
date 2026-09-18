@@ -148,6 +148,14 @@
       "version": "0.1.0",
       "category": "media",
       "tags": ["redact", "blur", "pixelate", "privacy", "image", "video", "ffmpeg"]
+    },
+    {
+      "name": "web-app-check",
+      "source": "./plugins/web-app-check",
+      "description": "Open a web page from your folder in a hidden browser and report the text on screen and any errors",
+      "version": "0.1.0",
+      "category": "developer",
+      "tags": ["web", "app", "check", "browser"]
     }
   ]
 }

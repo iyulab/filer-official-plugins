@@ -1,0 +1,8 @@
+{
+  "name": "web-app-check-plugin-deps",
+  "private": true,
+  "description": "Vendored runtime dependency for the web-app-check plugin — see tools/check-web-app.js. Committed node_modules, not gitignored: the plugin installer copies this directory verbatim with no npm-install step (same pattern as plugins/image-converter/package.json). playwright-core drives the Microsoft Edge that ships with Windows (channel: msedge); it carries no browser of its own and downloads nothing.",
+  "dependencies": {
+    "playwright-core": "1.63.0"
+  }
+}

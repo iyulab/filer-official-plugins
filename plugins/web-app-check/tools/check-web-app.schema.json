@@ -1,0 +1,20 @@
+{
+  "type": "object",
+  "properties": {
+    "appDir": {
+      "type": "string",
+      "format": "directory-path",
+      "description": "Absolute path of the folder that holds the web app. The page may load only files inside it."
+    },
+    "page": {
+      "type": "string",
+      "description": "The page to open, relative to appDir. Default: index.html"
+    },
+    "clicks": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "CSS selectors to click, in order, after the page has loaded (searched in the page and its frames). Optional."
+    }
+  },
+  "required": ["appDir"]
+}

@@ -1,0 +1,34 @@
+{
+  "name": "web-app-check",
+  "displayName": "Web App Check",
+  "version": "0.1.0",
+  "description": "Open a web page from your folder in a hidden browser and report what a person would see: the text on screen, and any errors the page raised",
+  "author": { "name": "iyulab", "url": "https://github.com/iyulab" },
+  "repository": "https://github.com/iyulab/filer-official-plugins",
+  "license": "MIT",
+  "keywords": ["web", "html", "app", "check", "verify", "browser"],
+  "category": "developer",
+  "runtime": "node",
+  "engines": { "filer": ">=0.9.0" },
+  "bundled": false,
+  "capabilities": ["check-web-app"],
+  "permissions": {
+    "fs": {
+      "read": {
+        "parameter": true,
+        "deny": ["**/.env", "**/.env.*", "**/.ssh/**", "**/*.pem", "**/*.key"]
+      }
+    }
+  },
+  "contributes": {
+    "tools": [
+      {
+        "id": "check_web_app",
+        "title": "Check Web App",
+        "description": "Open a web page that lives in a folder (index.html plus the scripts, styles and data files it loads) in a hidden Microsoft Edge window, the way a person opens it by double-clicking, and report what they would see: the page title, the visible text (including text inside embedded frames), errors the page threw, and console errors. Optionally clicks elements (CSS selectors, in order) first. The page may only load files inside appDir; every other file and every network request is blocked and listed. Use it after writing or changing a web app, before telling the user it is done — an empty list or a thrown error shows up here even when the code looks right.",
+        "schema": "./tools/check-web-app.schema.json",
+        "handler": "./tools/check-web-app.js"
+      }
+    ]
+  }
+}
