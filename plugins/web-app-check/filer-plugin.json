@@ -2,7 +2,7 @@
   "name": "web-app-check",
   "displayName": "Web App Check",
   "version": "0.1.0",
-  "description": "Open a web page from your folder in a hidden browser and report what a person would see: the text on screen, and any errors the page raised",
+  "description": "Open a web page from your folder in a hidden browser and report what a person would see: the text on screen, any errors the page raised, and whether what it saves is still there after a reload",
   "author": { "name": "iyulab", "url": "https://github.com/iyulab" },
   "repository": "https://github.com/iyulab/filer-official-plugins",
   "license": "MIT",
@@ -17,6 +17,10 @@
       "read": {
         "parameter": true,
         "deny": ["**/.env", "**/.env.*", "**/.ssh/**", "**/*.pem", "**/*.key"]
+      },
+      "list": {
+        "parameter": true,
+        "deny": ["**/.ssh/**"]
       }
     }
   },
@@ -25,7 +29,7 @@
       {
         "id": "check_web_app",
         "title": "Check Web App",
-        "description": "Open a web page that lives in a folder (index.html plus the scripts, styles and data files it loads) in a hidden Microsoft Edge window, the way a person opens it by double-clicking, and report what they would see: the page title, the visible text (including text inside embedded frames), errors the page threw, and console errors. Optionally clicks elements (CSS selectors, in order) first. The page may only load files inside appDir; every other file and every network request is blocked and listed. Use it after writing or changing a web app, before telling the user it is done — an empty list or a thrown error shows up here even when the code looks right.",
+        "description": "Open a web page that lives in a folder (index.html plus the scripts, styles and data files it loads) in a hidden Microsoft Edge window, the way a person opens it by double-clicking, and report what they would see: the page title, the visible text (including text inside embedded frames), errors the page threw, console errors, and any alert it showed. Drive it with steps (click, fill, check, select, reload, expectText, expectValue, …). If the page saves through the browser's folder picker, set saveFolder: the check hands it the folder, keeps what it writes aside (nothing on disk changes), lists every write, and serves it back so a reload shows whether the save worked; saveFolder \"other\" hands it a wrong folder to see that it refuses. The page may only load files inside appDir; every other file and every network request is blocked and listed. Use it after writing or changing a web app, before telling the user it is done — an empty list, a thrown error, or a save that does not survive a reload shows up here even when the code looks right.",
         "schema": "./tools/check-web-app.schema.json",
         "handler": "./tools/check-web-app.js"
       }

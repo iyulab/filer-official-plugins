@@ -13,7 +13,33 @@
     "clicks": {
       "type": "array",
       "items": { "type": "string" },
-      "description": "CSS selectors to click, in order, after the page has loaded (searched in the page and its frames). Optional."
+      "description": "CSS selectors to click, in order, after the page has loaded (searched in the page and its frames). Optional. Runs before steps."
+    },
+    "steps": {
+      "type": "array",
+      "maxItems": 40,
+      "description": "A script to drive the page with, in order. Each entry names exactly one action: {\"click\": selector} · {\"fill\": selector, \"value\": text} · {\"check\": selector} · {\"uncheck\": selector} · {\"select\": selector, \"value\": option} · {\"wait\": milliseconds} · {\"reload\": true} · {\"expectText\": text} · {\"expectNoText\": text} · {\"expectValue\": selector, \"value\": text} (a checkbox reads \"true\" or \"false\"). A failed step is reported and the script goes on. To check that a page saves: change something, press its connect/save control, reload, and expect the change to still be there.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "click": { "type": "string" },
+          "fill": { "type": "string" },
+          "check": { "type": "string" },
+          "uncheck": { "type": "string" },
+          "select": { "type": "string" },
+          "wait": { "type": "number" },
+          "reload": { "type": "boolean" },
+          "expectText": { "type": "string" },
+          "expectNoText": { "type": "string" },
+          "expectValue": { "type": "string" },
+          "value": { "type": "string" }
+        }
+      }
+    },
+    "saveFolder": {
+      "type": "string",
+      "enum": ["app", "other"],
+      "description": "Set this when the page saves with the browser's folder picker (showDirectoryPicker). No person is there to pick a folder, so the check hands the page one: \"app\" = the app's own folder (appDir), \"other\" = an empty folder that is not the app's, to see that the page refuses it. Nothing is written to disk — what the page writes is kept aside, listed in the report, and served back to the page, so a reload step shows what it saved."
     }
   },
   "required": ["appDir"]
