@@ -179,7 +179,7 @@ async function runStep(page, step, ctx) {
 function createSaveFolder(mode, appDir, ctx) {
   const written = new Map() // relative posix path -> text
   const removed = new Set()
-  const state = { pickerCalls: 0, writes: [], wrongFolderWrites: [] }
+  const state = { pickerCalls: 0, writes: [], wrongFolderWrites: [], servedBack: {} }
   const rel = (p) => String(p || '').replace(/\\/g, '/').replace(/^\/+/, '')
   const onDisk = (p) => {
     const abs = path.resolve(appDir, rel(p))
@@ -256,7 +256,9 @@ function createSaveFolder(mode, appDir, ctx) {
     overlayFor(absolute) {
       const key = path.relative(appDir, absolute).replace(/\\/g, '/')
       if (removed.has(key)) return { missing: true }
-      return written.has(key) ? { body: written.get(key) } : null
+      if (!written.has(key)) return null
+      state.servedBack[key] = (state.servedBack[key] ?? 0) + 1
+      return { body: written.get(key) }
     },
   }
 }
@@ -502,7 +504,8 @@ module.exports = async function handler(params, ctx) {
               pickerCalls: folder.state.pickerCalls,
               writes: folder.state.writes,
               ...(saveMode === 'other' ? { writesIntoTheWrongFolder: folder.state.wrongFolderWrites } : {}),
-              note: 'Nothing was written to disk: the page\'s writes were kept aside and served back to it, so a reload step shows what it saved.',
+              servedBackToThePage: Object.entries(folder.state.servedBack).map(([file, times]) => ({ file, times })),
+              note: 'Nothing was written to disk: the page\'s writes were kept aside and served back to it on every load after the write (servedBackToThePage counts them), so after a reload step the page has its saved file exactly as a person\'s browser would. After a reload the page\'s status line starts over — assert the saved state on the inputs (expectValue), not on a "Saved" message.',
             },
           }
         : {}),

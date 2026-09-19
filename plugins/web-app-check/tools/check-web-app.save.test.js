@@ -134,6 +134,7 @@ test('save: a page that saves correctly passes, and the folder on disk is untouc
   assert.equal(result.saveFolder.pickerCalls, 1)
   assert.equal(result.saveFolder.writes.length, 2, 'the flush on connect, then the change after it')
   assert.ok(result.saveFolder.writes.every((w) => w.file === 'notes.edits.js' && w.chars > 0))
+  assert.deepEqual(result.saveFolder.servedBackToThePage, [{ file: 'notes.edits.js', times: 1 }], 'the reload got the saved file')
   assert.equal(hashDir(appDir), hashBefore, 'the check must not write into the folder it verifies')
   assert.equal(fs.existsSync(path.join(appDir, 'notes.edits.js')), false)
 })
