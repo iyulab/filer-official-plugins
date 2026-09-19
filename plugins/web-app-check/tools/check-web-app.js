@@ -522,7 +522,7 @@ function summarizeSave(mode, state) {
   if (state.pickerCalls === 0) return 'The page never asked for a folder — no step reached its connect/save control, or the control does not call showDirectoryPicker.'
   if (mode === 'other') {
     return state.wrongFolderWrites.length
-      ? `The page accepted a folder that is not its own and wrote ${state.wrongFolderWrites.length} file(s) into it.`
+      ? `PROBLEM: the page accepted a folder that is not its own and wrote ${state.wrongFolderWrites.length} file(s) into it. A page must check that the folder it is handed holds its own files, and otherwise say so and write nothing.`
       : 'The page was handed a folder that is not its own and wrote nothing into it.'
   }
   return state.writes.length

@@ -179,3 +179,15 @@ test('an alert does not freeze the check and is reported', needsEdge, async () =
 
   assert.deepEqual(result.dialogs, [{ type: 'alert', message: 'Pick the notes folder.' }])
 })
+
+test('save: a page that writes into whatever folder it is handed is told so as a problem', needsEdge, async () => {
+  // The report states facts; this one it also judges, because writing only into its own folder is what makes handing a
+  // page a folder safe — and a model that was never told so does not read a bare list of writes as a defect.
+  const trusting = GOOD_APP.replace("if (!mine) { document.getElementById('status').textContent = 'That is not the notes folder.'; return; }", '')
+  const result = await handler({
+    appDir: makeApp(trusting), saveFolder: 'other', steps: [{ check: '#done-a' }, { click: '#connect' }, { wait: 300 }],
+  }, ctx)
+
+  assert.equal(result.saveFolder.writesIntoTheWrongFolder.length, 1)
+  assert.match(result.saveFolder.summary, /^PROBLEM: .*must check that the folder/)
+})
