@@ -25,12 +25,14 @@
     "tools": [
       {
         "id": "detect_region",
+        "annotations": { "readOnlyHint": false, "destructiveHint": false, "openWorldHint": false },
         "title": "Detect Region to Redact (AI)",
         "description": "Describe the region to redact in natural language (e.g. 'the folder sidebar on the left') and get back pixel coordinates {x, y, width, height} inferred by a vision-capable model. Requires path, description. Optional frameTimestamp (video only, default 0) picks which frame to analyze. Also writes the detected coordinates to a sidecar '<path>.detect-region.json' file next to the source, since the result itself isn't otherwise shown to the user. Fails with a specific message if no remote vision-capable model is configured — the caller should fall back to manual coordinate entry, not retry.",
         "schema": "./tools/detect-region.schema.json"
       },
       {
         "id": "redact_region",
+        "annotations": { "readOnlyHint": false, "destructiveHint": false, "openWorldHint": false },
         "title": "Redact a Region",
         "description": "Pixelate a fixed rectangular region of an image or video. Requires path, x, y, width, height, outputPath. Optional startTime/endTime (video only, seconds) limit the redaction to that time range — omit both to redact the whole duration. Refuses to overwrite an existing file at outputPath.",
         "schema": "./tools/redact-region.schema.json"

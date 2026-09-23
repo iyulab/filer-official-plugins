@@ -28,6 +28,7 @@
     "tools": [
       {
         "id": "create_gif",
+        "annotations": { "readOnlyHint": false, "destructiveHint": false, "openWorldHint": false },
         "title": "Create GIF from Images",
         "description": "Combine 2-20 PNG, JPEG, WebP, or BMP images (all the same size) into one animated GIF. Requires paths, outputPath. Optional frameDelayMs (default 500) and loop (default true). Refuses to overwrite an existing file at outputPath.",
         "schema": "./tools/create-gif.schema.json",

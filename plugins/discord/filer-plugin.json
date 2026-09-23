@@ -51,6 +51,7 @@
     "tools": [
       {
         "id": "send_discord_message",
+        "annotations": { "readOnlyHint": false, "destructiveHint": false, "openWorldHint": true },
         "title": "Send Discord Message",
         "description": "Send a text message to a Discord channel via webhook",
         "schema": "./tools/send-message.schema.json",
@@ -58,6 +59,7 @@
       },
       {
         "id": "send_discord_embed",
+        "annotations": { "readOnlyHint": false, "destructiveHint": false, "openWorldHint": true },
         "title": "Send Discord Embed",
         "description": "Send a rich embed message to Discord via webhook",
         "schema": "./tools/send-embed.schema.json",

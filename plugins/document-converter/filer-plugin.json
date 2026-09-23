@@ -29,6 +29,7 @@
     "tools": [
       {
         "id": "convert_document",
+        "annotations": { "readOnlyHint": false, "destructiveHint": false, "openWorldHint": false },
         "title": "Convert Document File",
         "description": "Convert a Word document (.docx), Markdown (.md), HTML (.html), or plain text (.txt) file to PDF, HTML, Markdown, or plain text. Requires path, targetFormat, and outputPath. Refuses to overwrite an existing file at outputPath. PDF is an output-only format (no PDF source support).",
         "schema": "./tools/convert-document.schema.json",

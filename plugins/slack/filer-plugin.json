@@ -50,6 +50,7 @@
     "tools": [
       {
         "id": "slack_send_message",
+        "annotations": { "readOnlyHint": false, "destructiveHint": false, "openWorldHint": true },
         "title": "Send Slack Message",
         "description": "Send a message to a Slack channel via webhook",
         "schema": "./tools/send-message.schema.json",

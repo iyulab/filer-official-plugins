@@ -74,6 +74,7 @@
     "tools": [
       {
         "id": "webhook_send",
+        "annotations": { "readOnlyHint": false, "destructiveHint": false, "openWorldHint": true },
         "title": "Send Webhook",
         "description": "Send a custom webhook POST request to the configured URL",
         "schema": "./tools/send.schema.json",

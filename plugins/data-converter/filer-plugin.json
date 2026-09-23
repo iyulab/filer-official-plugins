@@ -28,6 +28,7 @@
     "tools": [
       {
         "id": "convert_data",
+        "annotations": { "readOnlyHint": false, "destructiveHint": false, "openWorldHint": false },
         "title": "Convert Data File",
         "description": "Convert a CSV, JSON, or Excel data file to another of those formats. Requires path, targetFormat, and outputPath. Refuses to overwrite an existing file at outputPath.",
         "schema": "./tools/convert-data.schema.json",

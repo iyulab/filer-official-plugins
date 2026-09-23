@@ -24,6 +24,7 @@
     "tools": [
       {
         "id": "read_text_document",
+        "annotations": { "readOnlyHint": true, "openWorldHint": false },
         "title": "Read Text Document",
         "description": "Read the text content of a document file. Supports .txt, .md, .html, .xml, .json, .csv, .yaml, .log, and other text formats. Returns the full content as a string.",
         "schema": "./tools/read-document.schema.json",
@@ -31,6 +32,7 @@
       },
       {
         "id": "get_document_info",
+        "annotations": { "readOnlyHint": true, "openWorldHint": false },
         "title": "Get Document Info",
         "description": "Get metadata about a document file: file name, extension, size in bytes and KB, word count, line count, and character count. Useful for understanding a file before reading its full content.",
         "schema": "./tools/get-document-info.schema.json",

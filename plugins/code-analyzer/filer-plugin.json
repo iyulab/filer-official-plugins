@@ -27,6 +27,7 @@
     "tools": [
       {
         "id": "read_code_file",
+        "annotations": { "readOnlyHint": true, "openWorldHint": false },
         "title": "Read Code File",
         "description": "Read the content of a source code file. Returns the full source code with detected programming language, line count, and file info. Supports 30+ languages (JS, TS, Python, C#, Java, Go, Rust, etc.).",
         "schema": "./tools/read-code-file.schema.json",
@@ -34,6 +35,7 @@
       },
       {
         "id": "list_code_files",
+        "annotations": { "readOnlyHint": true, "openWorldHint": false },
         "title": "List Code Files",
         "description": "List all code files in a folder. Returns file paths filtered by programming language extensions. Optionally specify extensions to filter (e.g. ['js', 'ts']). Does not recurse into subfolders.",
         "schema": "./tools/list-code-files.schema.json",
@@ -41,6 +43,7 @@
       },
       {
         "id": "list_commits",
+        "annotations": { "readOnlyHint": true, "openWorldHint": false },
         "title": "List Commits",
         "description": "List the Git commit history of a folder, newest first: hash, author, date, subject, body and the number of files/lines each commit changed. Only commits that touch the folder (and its subfolders) are listed, even inside a larger repository. Optional limit (default 30), since (ISO date), ref (branch or tag) and path (file or subfolder). Use read_commit for one commit's files and diff. Requires Git on the machine.",
         "schema": "./tools/list-commits.schema.json",
@@ -49,6 +52,7 @@
       },
       {
         "id": "read_commit",
+        "annotations": { "readOnlyHint": true, "openWorldHint": false },
         "title": "Read Commit",
         "description": "Read one Git commit by its hash (from list_commits): message, author, date, the files it changed within the folder (status, lines added/removed) and the diff (cut at maxDiffChars, default 20000, with a truncated flag). Files and diff are limited to the folder and its subfolders. Requires Git on the machine.",
         "schema": "./tools/read-commit.schema.json",

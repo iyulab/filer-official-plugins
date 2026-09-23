@@ -24,6 +24,7 @@
     "tools": [
       {
         "id": "get_image_data",
+        "annotations": { "readOnlyHint": true, "openWorldHint": false },
         "title": "Get Image Data",
         "description": "Read an image file and return its metadata (file name, MIME type, size, dimensions for PNG/JPEG). Set includeBase64=true to get base64-encoded image data for multimodal vision model input.",
         "schema": "./tools/get-image-data.schema.json",

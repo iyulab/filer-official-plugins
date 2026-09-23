@@ -61,6 +61,7 @@
     "tools": [
       {
         "id": "refine_transcript",
+        "annotations": { "readOnlyHint": false, "destructiveHint": false, "openWorldHint": false },
         "title": "Refine Transcript (AI)",
         "description": "Correct speech-to-text mistakes in a WebVTT transcript using the user's own configured model: misheard words, spacing, misspelled names (an optional glossary .md lists the right spellings). Every segment and every timing is kept; a segment that is meaningless becomes [unclear]; a correction that changes too much is not applied but listed as rejected, with the original, for a person to decide. Requires path (.vtt), outputPath (the refined .vtt) and changesPath (a .json listing applied and rejected changes). Refuses to overwrite existing files.",
         "schema": "./tools/refine-transcript.schema.json"

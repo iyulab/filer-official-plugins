@@ -99,6 +99,7 @@
     "tools": [
       {
         "id": "send_telegram_message",
+        "annotations": { "readOnlyHint": false, "destructiveHint": false, "openWorldHint": true },
         "title": "Send Telegram Message",
         "description": "Send a text message to a Telegram chat. Chat ID is pre-configured — just provide the message.",
         "schema": "./tools/send-message.schema.json",
@@ -106,6 +107,7 @@
       },
       {
         "id": "send_telegram_file",
+        "annotations": { "readOnlyHint": false, "destructiveHint": false, "openWorldHint": true },
         "title": "Send File via Telegram",
         "description": "Send a file with optional caption to a Telegram chat. Chat ID is pre-configured.",
         "schema": "./tools/send-file.schema.json",

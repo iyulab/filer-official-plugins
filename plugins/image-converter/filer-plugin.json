@@ -28,6 +28,7 @@
     "tools": [
       {
         "id": "convert_image",
+        "annotations": { "readOnlyHint": false, "destructiveHint": false, "openWorldHint": false },
         "title": "Convert Image File",
         "description": "Convert a PNG, JPEG, WebP, GIF, or BMP image to another of those formats. Requires path, targetFormat, and outputPath. Refuses to overwrite an existing file at outputPath. SVG sources are rejected (vector format, not supported).",
         "schema": "./tools/convert-image.schema.json",

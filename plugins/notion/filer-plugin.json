@@ -50,6 +50,7 @@
     "tools": [
       {
         "id": "notion_create_page",
+        "annotations": { "readOnlyHint": false, "destructiveHint": false, "openWorldHint": true },
         "title": "Create Notion Page",
         "description": "Create a new page in a Notion database",
         "schema": "./tools/create-page.schema.json",
@@ -57,6 +58,7 @@
       },
       {
         "id": "notion_append_block",
+        "annotations": { "readOnlyHint": false, "destructiveHint": false, "openWorldHint": true },
         "title": "Append to Notion Page",
         "description": "Append content to an existing Notion page",
         "schema": "./tools/append-block.schema.json",

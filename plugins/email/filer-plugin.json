@@ -131,6 +131,7 @@
     "tools": [
       {
         "id": "send_email",
+        "annotations": { "readOnlyHint": false, "destructiveHint": false, "openWorldHint": true },
         "title": "Send Email",
         "description": "Send an email message",
         "schema": "./tools/send-email.schema.json",
