@@ -8,10 +8,16 @@ const SETTINGS = {
   'telegram.defaultChatId': '12345',
 };
 
+function makeStore() {
+  const data = {};
+  return { data, get: async (k) => data[k], set: async (k, v) => { data[k] = v; } };
+}
 function makeCtx() {
   return {
     settings: { get: async key => SETTINGS[key] },
     toast: () => {},
+    store: makeStore(),
+    viewData: { set: () => {} },
   };
 }
 
@@ -39,6 +45,26 @@ test('notify-complete sends the real turn result text, not the broken event.resu
     assert.equal(calls.length, 1);
     assert.equal(calls[0].body.text, '✅ Agent completed (4.2s)\n\nTotal amount: $1,095 across 4 invoices.');
   });
+});
+
+test('notify-complete records the message it sent in the plugin history', async () => {
+  const ctx = makeCtx();
+  await withMockFetch({ ok: true, result: {} }, async () => {
+    await handler({ channelId: 'default', duration: 1000, result: 'Done.' }, ctx);
+  });
+  const history = ctx.store.data.messageHistory;
+  assert.equal(history.length, 1);
+  assert.equal(history[0].direction, 'out');
+  assert.equal(history[0].chatId, '12345');
+  assert.match(history[0].message, /Agent completed/);
+});
+
+test('notify-complete records nothing when Telegram refuses the message', async () => {
+  const ctx = makeCtx();
+  await withMockFetch({ ok: false, description: 'Bad Request: chat not found' }, async () => {
+    await handler({ channelId: 'default', duration: 1000, result: 'Done.' }, ctx);
+  });
+  assert.equal(ctx.store.data.messageHistory, undefined);
 });
 
 test('notify-complete falls back to a placeholder when result is missing', async () => {

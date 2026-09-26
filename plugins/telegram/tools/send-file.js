@@ -1,4 +1,5 @@
 const { resolveTopicId } = require('../lib/telegram-api');
+const { recordOutbound } = require('../lib/message-history');
 
 module.exports = async function handler(params, ctx) {
   const botToken = await ctx.settings.get('telegram.botToken');
@@ -30,18 +31,7 @@ module.exports = async function handler(params, ctx) {
     const data = await resp.json();
     if (!data.ok) throw new Error(`Telegram sendDocument: ${data.description}`);
 
-    // Update message history (persistent store + live viewData)
-    const history = (await ctx.store.get('messageHistory')) || [];
-    history.unshift({
-      direction: 'out',
-      message: `[File] ${fileName}`,
-      chatId,
-      channelId,
-      timestamp: Date.now(),
-    });
-    if (history.length > 100) history.length = 100;
-    await ctx.store.set('messageHistory', history);
-    ctx.viewData.set('telegram.messageHistory', history);
+    await recordOutbound(ctx, { message: `[File] ${fileName}`, chatId, channelId });
 
     return { success: true, fileName };
   } catch (e) {

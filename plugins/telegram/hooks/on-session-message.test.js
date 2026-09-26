@@ -11,6 +11,10 @@ const SETTINGS = {
   'telegram.messageFormat': 'plain',
 };
 
+function makeStore() {
+  const data = {};
+  return { data, get: async (k) => data[k], set: async (k, v) => { data[k] = v; } };
+}
 function makeCtx({ history } = {}) {
   const calls = { fetch: [], getSessionHistory: [] };
   return {
@@ -25,6 +29,8 @@ function makeCtx({ history } = {}) {
       return history;
     },
     log: { info: () => {}, warn: () => {}, error: () => {} },
+    store: makeStore(),
+    viewData: { set: () => {} },
   };
 }
 
@@ -69,4 +75,16 @@ test('skips the fetch/getSessionHistory call entirely when the event already car
     assert.equal(ctx.calls.getSessionHistory.length, 0);
     assert.equal(telegramCalls[0].body.text, 'Done.');
   });
+});
+
+test('a relayed reply is recorded in the plugin history (the reply to an inbound message, not only tool sends)', async () => {
+  const ctx = makeCtx();
+  await withMockTelegramFetch(async () => {
+    await handler({ channelId: 'default', sessionId: 'sess-3', result: 'The total is 1,095.' }, ctx);
+  });
+  const history = ctx.store.data.messageHistory;
+  assert.equal(history.length, 1);
+  assert.equal(history[0].direction, 'out');
+  assert.equal(history[0].message, 'The total is 1,095.');
+  assert.equal(history[0].channelId, 'default');
 });

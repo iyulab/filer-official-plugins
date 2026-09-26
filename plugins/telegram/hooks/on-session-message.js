@@ -1,4 +1,5 @@
 const { sendWithTopicRetry } = require('../lib/telegram-api');
+const { recordOutbound } = require('../lib/message-history');
 
 module.exports = async function onSessionMessage(event, ctx) {
   const botToken = await ctx.settings.get('telegram.botToken');
@@ -43,6 +44,7 @@ module.exports = async function onSessionMessage(event, ctx) {
     };
 
     await sendWithTopicRetry(ctx, botToken, chatId, event.channelId, 'sendMessage', payload);
+    await recordOutbound(ctx, { message: text, chatId, channelId: event.channelId });
   } catch (err) {
     ctx.log.error('Failed to relay session message to Telegram:', err.message);
   }

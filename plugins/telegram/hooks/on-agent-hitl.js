@@ -1,4 +1,5 @@
 const { sendWithTopicRetry } = require('../lib/telegram-api');
+const { recordOutbound } = require('../lib/message-history');
 
 module.exports = async function onAgentHitl(event, ctx) {
   const botToken = await ctx.settings.get('telegram.botToken');
@@ -35,6 +36,7 @@ module.exports = async function onAgentHitl(event, ctx) {
 
   try {
     await sendWithTopicRetry(ctx, botToken, chatId, event.channelId || 'default', 'sendMessage', payload);
+    await recordOutbound(ctx, { message: text, chatId, channelId: event.channelId || 'default' });
   } catch (err) {
     ctx.log.error('Failed to send HITL request to Telegram:', err.message);
   }

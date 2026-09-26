@@ -1,4 +1,5 @@
 const { sendWithTopicRetry } = require('../lib/telegram-api');
+const { recordOutbound } = require('../lib/message-history');
 
 module.exports = async function onAgentComplete(event, ctx) {
   if (!(await ctx.settings.get('telegram.notifyOnAgentComplete'))) return;
@@ -20,6 +21,7 @@ module.exports = async function onAgentComplete(event, ctx) {
 
   try {
     await sendWithTopicRetry(ctx, botToken, chatId, channelId, 'sendMessage', payload);
+    await recordOutbound(ctx, { message: text, chatId, channelId });
     ctx.toast({ type: 'info', message: 'Agent result sent to Telegram' });
   } catch (e) {
     console.warn('[telegram] notify-complete failed:', e.message);

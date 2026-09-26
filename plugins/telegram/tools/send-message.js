@@ -1,4 +1,5 @@
 const { sendWithTopicRetry } = require('../lib/telegram-api');
+const { recordOutbound } = require('../lib/message-history');
 
 module.exports = async function handler(params, ctx) {
   const botToken = await ctx.settings.get('telegram.botToken');
@@ -14,19 +15,7 @@ module.exports = async function handler(params, ctx) {
 
   try {
     await sendWithTopicRetry(ctx, botToken, chatId, channelId, 'sendMessage', payload);
-
-    // Update message history (persistent store + live viewData)
-    const history = (await ctx.store.get('messageHistory')) || [];
-    history.unshift({
-      direction: 'out',
-      message: params.message.substring(0, 100),
-      chatId,
-      channelId,
-      timestamp: Date.now(),
-    });
-    if (history.length > 100) history.length = 100;
-    await ctx.store.set('messageHistory', history);
-    ctx.viewData.set('telegram.messageHistory', history);
+    await recordOutbound(ctx, { message: params.message, chatId, channelId });
 
     return { success: true };
   } catch (e) {
