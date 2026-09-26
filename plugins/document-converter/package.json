@@ -1,7 +1,7 @@
 {
   "name": "document-converter-plugin-deps",
   "private": true,
-  "description": "Vendored runtime dependencies for the document-converter plugin — see tools/convert-document.js. Committed node_modules, not gitignored: the plugin installer copies this directory verbatim with no npm-install step, so the resolved dependency tree must already exist on disk for Node's module resolution to find it (same pattern as plugins/image-converter/package.json). mammoth converts docx to html; marked/turndown convert md<->html. PDF output uses no library here — it goes through ctx.renderHtmlToPdf (Electron's own BrowserWindow.printToPDF, plugin-context.ts), this app's own advantage over a plain-Node plugin runtime.",
+  "description": "Vendored runtime dependencies for the document-converter plugin — see tools/convert-document.js. Committed node_modules, not gitignored: the plugin installer copies this directory verbatim with no npm-install step, so the resolved dependency tree must already exist on disk for Node's module resolution to find it (same pattern as plugins/image-converter/package.json). mammoth converts docx to html; marked/turndown convert md<->html. PDF output uses no library here — it goes through ctx.renderHtmlToPdf, which Filer renders with the operating system's own browser engine (headless Microsoft Edge on Windows); where no renderer exists the call rejects and the conversion reports it.",
   "dependencies": {
     "mammoth": "1.12.1",
     "marked": "18.0.11",
