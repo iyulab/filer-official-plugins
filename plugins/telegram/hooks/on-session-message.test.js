@@ -88,3 +88,35 @@ test('a relayed reply is recorded in the plugin history (the reply to an inbound
   assert.equal(history[0].message, 'The total is 1,095.');
   assert.equal(history[0].channelId, 'default');
 });
+
+// The host reads this hook's outcome as whether an inbound run's reply reached the user: a relay that cannot be made must
+// throw, never return quietly (a quiet return read as delivered — the run said Completed with nothing sent).
+test('a relay with no chat id throws, and sends nothing', async () => {
+  const ctx = makeCtx();
+  ctx.settings.get = async (key) => (key === 'telegram.defaultChatId' ? undefined : SETTINGS[key]);
+  await withMockTelegramFetch(async (telegramCalls) => {
+    await assert.rejects(handler({ channelId: 'default', sessionId: 's', result: 'hi' }, ctx), /chat id is not set/);
+    assert.equal(telegramCalls.length, 0);
+  });
+});
+
+test('a relay the Telegram API refuses throws, and is not recorded as sent', async () => {
+  const ctx = makeCtx();
+  const originalFetch = global.fetch;
+  global.fetch = async () => ({ ok: false, status: 400, json: async () => ({ ok: false, error_code: 400, description: 'Bad Request: chat not found' }) });
+  try {
+    await assert.rejects(handler({ channelId: 'default', sessionId: 's', result: 'hi' }, ctx), /chat not found/);
+  } finally {
+    global.fetch = originalFetch;
+  }
+  assert.equal(ctx.store.data.messageHistory, undefined);
+});
+
+test('a session with no channel is not a relay — nothing is thrown or sent', async () => {
+  const ctx = makeCtx();
+  ctx.settings.get = async () => undefined;
+  await withMockTelegramFetch(async (telegramCalls) => {
+    await handler({ sessionId: 's', result: 'hi' }, ctx);
+    assert.equal(telegramCalls.length, 0);
+  });
+});

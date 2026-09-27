@@ -2,10 +2,13 @@ const { sendWithTopicRetry } = require('../lib/telegram-api');
 const { recordOutbound } = require('../lib/message-history');
 
 module.exports = async function onSessionMessage(event, ctx) {
+  if (!event.channelId) return;
   const botToken = await ctx.settings.get('telegram.botToken');
   const chatId = await ctx.settings.get('telegram.defaultChatId');
-  if (!botToken || !chatId) return;
-  if (!event.channelId) return;
+  // A relay that cannot be made is a failure, not a quiet no-op: the host reads this hook's outcome as whether the run's
+  // reply reached the user (a thrown error = not delivered). Returning here made an unconfigured bot read as delivered.
+  if (!botToken) throw new Error('Telegram bot token is not set');
+  if (!chatId) throw new Error('Telegram chat id is not set — send /start to the bot');
 
   const format = (await ctx.settings.get('telegram.messageFormat')) || 'Markdown';
 
@@ -47,5 +50,6 @@ module.exports = async function onSessionMessage(event, ctx) {
     await recordOutbound(ctx, { message: text, chatId, channelId: event.channelId });
   } catch (err) {
     ctx.log.error('Failed to relay session message to Telegram:', err.message);
+    throw err;
   }
 };
