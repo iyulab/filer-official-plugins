@@ -69,6 +69,42 @@ public sealed class RefineCommandTests : IDisposable
     }
 
     [Fact]
+    public async Task A_speaker_labelled_cue_keeps_its_voice_span_and_the_model_edits_words_only()
+    {
+        // The transcribe step writes one voice per cue (<v Speaker 1>…) when it labels speakers.
+        var source = Write("m.vtt", """
+            WEBVTT
+
+            00:00:00.000 --> 00:00:04.000
+            <v Speaker 1>지금부터 마케팅 팀 주간 회를 시작하겠습니다
+
+            00:00:04.000 --> 00:00:08.000
+            <v Speaker 2>참석자는 김인수 팀장과 박준호 사원입니다
+            """);
+        var model = new CapturingModel("[0] 지금부터 마케팅 팀 주간 회의를 시작하겠습니다");
+
+        var result = await RefineCommand.RunAsync(model, source, Path.Combine(_dir, "m.clean.vtt"), Path.Combine(_dir, "m.changes.json"), null);
+
+        result.Applied.Should().Be(1);
+        var refined = File.ReadAllText(result.OutputPath);
+        refined.Should().Contain("<v Speaker 1>지금부터 마케팅 팀 주간 회의를").And.Contain("<v Speaker 2>참석자는");
+        model.Prompt.Should().NotContain("<v ");
+    }
+
+    private sealed class CapturingModel(string reply) : IChatClient
+    {
+        public string Prompt { get; private set; } = "";
+        public Task<ChatResponse> GetResponseAsync(IEnumerable<ChatMessage> messages, ChatOptions? options = null, CancellationToken cancellationToken = default)
+        {
+            Prompt += string.Join("\n", messages.Select(m => m.Text));
+            return Task.FromResult(new ChatResponse(new ChatMessage(ChatRole.Assistant, reply)));
+        }
+        public IAsyncEnumerable<ChatResponseUpdate> GetStreamingResponseAsync(IEnumerable<ChatMessage> messages, ChatOptions? options = null, CancellationToken cancellationToken = default) => throw new NotSupportedException();
+        public object? GetService(Type serviceType, object? serviceKey = null) => null;
+        public void Dispose() { }
+    }
+
+    [Fact]
     public async Task A_correction_the_gate_refuses_is_reported_with_its_original_not_applied()
     {
         var source = Write("m.vtt", Vtt);
