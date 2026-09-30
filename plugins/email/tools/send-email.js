@@ -1,7 +1,7 @@
 export default async function(params, ctx) {
   const provider = await ctx.settings.get('email.provider') || 'smtp';
   const fromAddress = await ctx.settings.get('email.fromAddress');
-  if (!fromAddress) throw new Error('From address not configured. Set it in Settings > Extensions.');
+  if (!fromAddress) throw new Error('From address not configured. Set it in Connect > Email Integration > Settings.');
 
   const to = params.to || await ctx.settings.get('email.defaultTo');
   if (!to) throw new Error('No recipient specified and no default configured.');

@@ -7,13 +7,13 @@ export default async function(args, ctx) {
 
   const token = await ctx.settings.get('telegram.botToken');
   if (!token) {
-    ctx.toast({ type: 'error', message: 'Telegram Bot Token not configured. Set it in Settings > Extensions.' });
+    ctx.toast({ type: 'error', message: 'Telegram Bot Token not configured. Set it in Connect > Telegram Integration > Settings.' });
     return;
   }
 
   const chatId = await ctx.settings.get('telegram.defaultChatId');
   if (!chatId) {
-    ctx.toast({ type: 'error', message: 'Default Chat ID not configured. Set it in Settings > Extensions.' });
+    ctx.toast({ type: 'error', message: 'Default Chat ID not configured. Set it in Connect > Telegram Integration > Settings.' });
     return;
   }
 

@@ -16,7 +16,7 @@ export default async function(params, ctx) {
     }
   }
   if (!webhookUrl) webhookUrl = await ctx.settings.get('discord.webhookUrl');
-  if (!webhookUrl) throw new Error('Discord webhook URL not configured. Set it in Settings > Extensions.');
+  if (!webhookUrl) throw new Error('Discord webhook URL not configured. Set it in Connect > Discord Integration > Settings.');
 
   const username = await ctx.settings.get('discord.username') || 'Filer';
 

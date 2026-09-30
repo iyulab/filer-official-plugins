@@ -3,7 +3,7 @@ const NOTION_VERSION = '2022-06-28';
 
 export default async function(params, ctx) {
   const apiKey = await ctx.settings.get('notion.apiKey');
-  if (!apiKey) throw new Error('Notion API Key not configured. Set it in Settings > Extensions.');
+  if (!apiKey) throw new Error('Notion API Key not configured. Set it in Connect > Notion Integration > Settings.');
 
   const databaseId = params.databaseId || await ctx.settings.get('notion.defaultDatabaseId');
   if (!databaseId) throw new Error('No database ID provided and no default configured.');

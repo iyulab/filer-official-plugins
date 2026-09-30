@@ -1,6 +1,6 @@
 export default async function(params, ctx) {
   const url = await ctx.settings.get('webhook.url');
-  if (!url) throw new Error('Webhook URL not configured. Set it in Settings > Extensions.');
+  if (!url) throw new Error('Webhook URL not configured. Set it in Connect > Webhook Integration > Settings.');
 
   const body = JSON.stringify({
     event: params.event,
