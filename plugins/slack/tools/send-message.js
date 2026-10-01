@@ -16,8 +16,9 @@ export default async function(params, ctx) {
   if (!webhookUrl) webhookUrl = await ctx.settings.get('slack.webhookUrl');
   if (!webhookUrl) throw new Error('Slack Webhook URL not configured. Set it in Connect > Slack Integration > Settings.');
 
+  // A Slack app's incoming webhook always posts to the channel chosen when it was created — Slack ignores a channel
+  // in the payload — so the tool takes none, and the history does not claim one.
   const payload = { text: params.text };
-  if (params.channel) payload.channel = params.channel;
 
   const res = await ctx.fetch(webhookUrl, {
     method: 'POST',
@@ -41,7 +42,6 @@ export default async function(params, ctx) {
   const history = (await ctx.store.get('messageHistory')) || [];
   history.unshift({
     timestamp: Date.now(),
-    channel: params.channel || 'default',
     message: (params.text || '').substring(0, 100),
     status: 'sent',
   });

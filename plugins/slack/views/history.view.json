@@ -15,7 +15,6 @@
       "dataSource": "slack.messageHistory",
       "columns": [
         { "key": "timestamp", "title": "Time", "format": "relative-time" },
-        { "key": "channel", "title": "Channel" },
         { "key": "message", "title": "Message", "truncate": 60 },
         { "key": "status", "title": "Status", "type": "badge" }
       ],

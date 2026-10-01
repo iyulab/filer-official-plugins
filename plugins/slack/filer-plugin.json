@@ -25,6 +25,12 @@
 
   "contributes": {
     "settings": {
+      "slack.setup": {
+        "type": "info",
+        "title": "Setup Guide",
+        "description": "1. Go to api.slack.com/apps, click \"Create New App\" > \"From scratch\", name it (for example Filer) and pick your workspace\n2. Open \"Incoming Webhooks\" and switch it on\n3. Click \"Add New Webhook to Workspace\", choose the channel Filer should post to, and click \"Allow\"\n4. Copy the Webhook URL and paste it below\n5. Optional: to give the app Filer's picture, open \"Basic Information\" > \"Display Information\" and upload the image from https://filer-ai.com/assets/bot-avatar.png\n\nMessages always go to the channel chosen in step 3. To post to another channel, add another webhook there and paste its URL.",
+        "order": 0
+      },
       "slack.webhookUrl": {
         "type": "string",
         "title": "Webhook URL",
@@ -32,12 +38,6 @@
         "secret": true,
         "required": true,
         "order": 1
-      },
-      "slack.defaultChannel": {
-        "type": "string",
-        "title": "Default Channel",
-        "description": "Default channel name (overrides webhook default)",
-        "order": 2
       },
       "slack.notifyOnAgentComplete": {
         "type": "boolean",
@@ -52,7 +52,7 @@
         "id": "slack_send_message",
         "annotations": { "readOnlyHint": false, "destructiveHint": false, "openWorldHint": true },
         "title": "Send Slack Message",
-        "description": "Send a message to a Slack channel via webhook",
+        "description": "Send a message to Slack, to the channel the webhook was created for",
         "schema": "./tools/send-message.schema.json",
         "handler": "./tools/send-message.js"
       }
@@ -61,7 +61,7 @@
       {
         "id": "share-via-slack",
         "title": "Share via Slack",
-        "description": "Send a text summary of this file's content to the default Slack channel",
+        "description": "Send a text summary of this file's content to Slack",
         "scope": "single-file",
         "fileTypes": ["document"],
         "prompt": "./prompts/share-via-slack.md"

@@ -26,6 +26,12 @@
 
   "contributes": {
     "settings": {
+      "discord.setup": {
+        "type": "info",
+        "title": "Setup Guide",
+        "description": "1. In Discord, open the settings of the channel Filer should post to (the gear next to its name) > \"Integrations\" > \"Webhooks\"\n2. Click \"New Webhook\", then \"Copy Webhook URL\"\n3. Paste it below\n4. Optional: to give it Filer's picture, click the webhook's picture in the same place, upload the image from https://filer-ai.com/assets/bot-avatar.png and save\n\nMessages go to the channel the webhook belongs to, under the name in \"Bot Username\" (Filer if left empty).",
+        "order": 0
+      },
       "discord.webhookUrl": {
         "type": "string",
         "title": "Webhook URL",
