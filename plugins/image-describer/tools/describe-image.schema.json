@@ -1,0 +1,15 @@
+{
+  "type": "object",
+  "properties": {
+    "path": {
+      "type": "string",
+      "format": "file-path",
+      "description": "Absolute path to the image file (.png, .jpg, .jpeg, .gif, .webp, .bmp)"
+    },
+    "question": {
+      "type": "string",
+      "description": "What to ask about the image, e.g. \"What event is this ticket for?\". Leave it out for a short description of what the image shows."
+    }
+  },
+  "required": ["path"]
+}

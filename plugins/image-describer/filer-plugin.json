@@ -1,7 +1,7 @@
 {
   "name": "image-describer",
   "displayName": "Image Describer",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Describe image content and extract text from images using AI vision",
   "author": { "name": "iyulab", "url": "https://github.com/iyulab" },
   "repository": "https://github.com/iyulab/filer-official-plugins",
@@ -22,6 +22,14 @@
   },
   "contributes": {
     "tools": [
+      {
+        "id": "describe_image",
+        "annotations": { "readOnlyHint": true, "openWorldHint": false },
+        "title": "Describe Image",
+        "description": "Describe a photo or picture in words, or answer a question about it (what it shows, the text in it), using the configured AI model. Returns text, so it works on every model, including the local one.",
+        "schema": "./tools/describe-image.schema.json",
+        "handler": "./tools/describe-image.js"
+      },
       {
         "id": "get_image_data",
         "annotations": { "readOnlyHint": true, "openWorldHint": false },
