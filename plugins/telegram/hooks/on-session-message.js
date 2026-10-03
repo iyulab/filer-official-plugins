@@ -1,6 +1,8 @@
 const { sendWithTopicRetry } = require('../lib/telegram-api');
 const { recordOutbound } = require('../lib/message-history');
 
+// The reply to a conversation that came in on Telegram. Filer raises this only for such a conversation, with the reply's
+// text in `result` — a chat in the app's own panel, or a run started by a file or a schedule, is never relayed here.
 module.exports = async function onSessionMessage(event, ctx) {
   if (!event.channelId) return;
   const botToken = await ctx.settings.get('telegram.botToken');
@@ -9,33 +11,12 @@ module.exports = async function onSessionMessage(event, ctx) {
   // reply reached the user (a thrown error = not delivered). Returning here made an unconfigured bot read as delivered.
   if (!botToken) throw new Error('Telegram bot token is not set');
   if (!chatId) throw new Error('Telegram chat id is not set — send /start to the bot');
+  let text = typeof event.result === 'string' ? event.result.trim() : '';
+  if (!text) throw new Error('The run had no reply text to send');
 
   const format = (await ctx.settings.get('telegram.messageFormat')) || 'Markdown';
 
   try {
-    // A host-triggered working-agent session's transcript is never written to
-    // the same file the /history endpoint reads (that write path lives in the
-    // chat endpoint, which trigger-driven sessions bypass entirely) — the
-    // fetch below would 404 for every one of them. When the event already
-    // carries the result text (host-triggered path), use it directly and skip
-    // the fetch. A UI-chat-panel session's emission doesn't set `result`, so
-    // this falls through to the pre-existing fetch-based lookup unchanged.
-    let text = typeof event.result === 'string' ? event.result : null;
-
-    if (!text) {
-      // HD-91: ctx.getSessionHistory, not ctx.fetch — this always targets the host's own
-      // localhost origin, which ctx.fetch's SSRF deny-list unconditionally blocks.
-      const resp = await ctx.getSessionHistory(event.sessionId);
-      if (!resp || !Array.isArray(resp)) return;
-
-      const lastAssistant = [...resp].reverse().find(m => m.role === 'assistant');
-      if (!lastAssistant?.content) return;
-
-      text = typeof lastAssistant.content === 'string'
-        ? lastAssistant.content
-        : JSON.stringify(lastAssistant.content);
-    }
-
     if (text.length > 4000) {
       text = text.substring(0, 4000) + '\n\n... [truncated]';
     }

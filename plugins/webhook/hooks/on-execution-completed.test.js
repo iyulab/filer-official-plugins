@@ -15,7 +15,7 @@ function makeCtx(calls, notify = true) {
 
 test('on-execution-completed forwards the real onAgentComplete fields, not the fabricated agentName/status/tokensUsed shape', async () => {
   const calls = [];
-  await handler({ sessionId: 's1', channelId: 'default', duration: 4200, result: 'Total amount: $1,095.' }, makeCtx(calls));
+  await handler({ sessionId: 's1', channelId: 'default', duration: 4200, result: 'Total amount: $1,095.', outcome: 'completed', reason: null }, makeCtx(calls));
 
   assert.equal(calls.length, 1);
   assert.equal(calls[0].toolId, 'webhook.webhook_send');
@@ -24,6 +24,8 @@ test('on-execution-completed forwards the real onAgentComplete fields, not the f
     channelId: 'default',
     result: 'Total amount: $1,095.',
     durationMs: 4200,
+    outcome: 'completed',
+    reason: null,
   });
 });
 

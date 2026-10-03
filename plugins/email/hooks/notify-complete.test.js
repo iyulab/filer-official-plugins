@@ -37,3 +37,13 @@ test('notify-complete falls back to a placeholder when result is missing', async
   assert.equal(calls.length, 1);
   assert.match(calls[0].body.text, /Task completed/);
 });
+
+test('notify-complete says a failed run failed, in the subject and the body', async () => {
+  const calls = [];
+  await handler({ duration: 3000, result: '[error] boom', outcome: 'failed', reason: 'The model service did not answer.' }, makeCtx(calls));
+
+  assert.equal(calls[0].body.subject, 'Filer Agent Task Failed');
+  assert.match(calls[0].body.text, /^Agent task failed\./);
+  assert.match(calls[0].body.text, /Reason: The model service did not answer\./);
+  assert.doesNotMatch(calls[0].body.text, /\[error\]/);
+});

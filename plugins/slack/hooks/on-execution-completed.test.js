@@ -44,3 +44,10 @@ test('on-execution-completed does nothing when notifyOnAgentComplete is off', as
 
   assert.equal(calls.length, 0);
 });
+
+test('on-execution-completed says a failed run failed, with the reason', async () => {
+  const calls = [];
+  await handler({ channelId: 'default', duration: 3000, result: '[error] boom', outcome: 'failed', reason: 'The model service did not answer.' }, makeCtx(calls));
+
+  assert.equal(calls[0].body.text, ':x: Agent failed (3s)\n\nThe model service did not answer.');
+});

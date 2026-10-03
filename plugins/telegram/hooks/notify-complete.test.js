@@ -38,7 +38,7 @@ async function withMockFetch(responseBody, fn) {
 test('notify-complete sends the real turn result text, not the broken event.result.summary fallback', async () => {
   await withMockFetch({ ok: true, result: {} }, async calls => {
     await handler(
-      { channelId: 'default', duration: 4200, result: 'Total amount: $1,095 across 4 invoices.' },
+      { channelId: 'default', duration: 4200, result: 'Total amount: $1,095 across 4 invoices.', outcome: 'completed' },
       makeCtx(),
     );
 
@@ -50,7 +50,7 @@ test('notify-complete sends the real turn result text, not the broken event.resu
 test('notify-complete records the message it sent in the plugin history', async () => {
   const ctx = makeCtx();
   await withMockFetch({ ok: true, result: {} }, async () => {
-    await handler({ channelId: 'default', duration: 1000, result: 'Done.' }, ctx);
+    await handler({ channelId: 'default', duration: 1000, result: 'Done.', outcome: 'completed' }, ctx);
   });
   const history = ctx.store.data.messageHistory;
   assert.equal(history.length, 1);
@@ -73,5 +73,36 @@ test('notify-complete falls back to a placeholder when result is missing', async
 
     assert.equal(calls.length, 1);
     assert.match(calls[0].body.text, /No summary available/);
+  });
+});
+
+// The notice used to say "✅ Agent completed" for every run, a failed one included — the event now says how the run ended.
+test('notify-complete says a failed run failed, with the reason and not the raw error text', async () => {
+  await withMockFetch({ ok: true, result: {} }, async calls => {
+    await handler(
+      { channelId: 'default', duration: 3000, result: '[error] HttpRequestException: 502', outcome: 'failed', reason: 'The model service did not answer.' },
+      makeCtx(),
+    );
+
+    assert.equal(calls[0].body.text, '❌ Agent failed (3.0s)\n\nThe model service did not answer.');
+  });
+});
+
+test('notify-complete says an unfulfilled run was not fully done, with why and what it did', async () => {
+  await withMockFetch({ ok: true, result: {} }, async calls => {
+    await handler(
+      { channelId: 'default', duration: 2000, result: 'Wrote 2 of 3 summaries.', outcome: 'unfulfilled', reason: 'One output was not written.' },
+      makeCtx(),
+    );
+
+    assert.equal(calls[0].body.text, '⚠️ Agent finished without doing everything asked (2.0s)\n\nOne output was not written.\n\nWrote 2 of 3 summaries.');
+  });
+});
+
+test('notify-complete does not claim success when the event does not say how the run ended', async () => {
+  await withMockFetch({ ok: true, result: {} }, async calls => {
+    await handler({ channelId: 'default', duration: 1000, result: 'Done.' }, makeCtx());
+
+    assert.match(calls[0].body.text, /^Agent finished \(1\.0s\)/);
   });
 });

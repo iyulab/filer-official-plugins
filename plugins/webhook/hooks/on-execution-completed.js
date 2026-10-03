@@ -10,6 +10,9 @@ export default async function(event, ctx) {
         channelId: event.channelId,
         result: event.result,
         durationMs: event.duration,
+        // completed / unfulfilled / failed, and Filer's sentence for why when it is not completed
+        outcome: event.outcome,
+        reason: event.reason,
       },
     });
   } catch (err) {

@@ -1,3 +1,18 @@
+// How the run ended: `outcome` is completed / unfulfilled / failed, with Filer's `reason` when it is not completed.
+const HEADINGS = {
+  completed: ':white_check_mark: Agent completed',
+  unfulfilled: ':warning: Agent finished without doing everything asked',
+  failed: ':x: Agent failed',
+};
+
+function body(event) {
+  const result = typeof event.result === 'string' && event.result ? event.result : null;
+  const reason = typeof event.reason === 'string' && event.reason ? event.reason : null;
+  if (event.outcome === 'failed') return reason ?? result ?? 'No reason given';
+  if (event.outcome === 'unfulfilled') return [reason, result].filter(Boolean).join('\n\n') || 'Task not fully done';
+  return result ?? 'Task completed';
+}
+
 export default async function(event, ctx) {
   const notify = await ctx.settings.get('slack.notifyOnAgentComplete');
   if (!notify) return;
@@ -16,8 +31,7 @@ export default async function(event, ctx) {
   if (!webhookUrl) return;
 
   const duration = event.duration ? `${Math.round(event.duration / 1000)}s` : 'unknown';
-  const summary = typeof event.result === 'string' && event.result ? event.result : 'Task completed';
-  const text = `:white_check_mark: Agent completed (${duration})\n\n${summary}`;
+  const text = `${HEADINGS[event.outcome] ?? 'Agent finished'} (${duration})\n\n${body(event)}`;
 
   await ctx.fetch(webhookUrl, {
     method: 'POST',

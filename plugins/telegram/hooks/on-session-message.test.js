@@ -2,8 +2,8 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const handler = require('./on-session-message.js');
 
-// HD-91 regression guard: a UI-chat-panel session's transcript lookup must route through
-// ctx.getSessionHistory, never ctx.fetch — see plugin-context.ts's HD-91 comments.
+// The reply to a conversation that came in on Telegram. Filer always passes the reply's text; the plugin never looks a
+// session's history up (a panel chat is not relayed, and a host-run session had no history to read).
 
 const SETTINGS = {
   'telegram.botToken': 'test-token',
@@ -15,18 +15,11 @@ function makeStore() {
   const data = {};
   return { data, get: async (k) => data[k], set: async (k, v) => { data[k] = v; } };
 }
-function makeCtx({ history } = {}) {
-  const calls = { fetch: [], getSessionHistory: [] };
+function makeCtx() {
   return {
-    calls,
     settings: { get: async (key) => SETTINGS[key] },
-    fetch: async (...args) => {
-      calls.fetch.push(args);
-      throw new Error('ctx.fetch must not be called — use ctx.getSessionHistory');
-    },
-    getSessionHistory: async (sessionId) => {
-      calls.getSessionHistory.push(sessionId);
-      return history;
+    fetch: async () => {
+      throw new Error('ctx.fetch must not be called — the reply text arrives in the event');
     },
     log: { info: () => {}, warn: () => {}, error: () => {} },
     store: makeStore(),
@@ -48,32 +41,25 @@ async function withMockTelegramFetch(fn) {
   }
 }
 
-test('relays a UI-chat-panel session (no event.result) via ctx.getSessionHistory, not ctx.fetch', async () => {
-  const ctx = makeCtx({
-    history: [
-      { role: 'user', content: 'hi' },
-      { role: 'assistant', content: 'Total amount: $1,095' },
-    ],
-  });
-
-  await withMockTelegramFetch(async (telegramCalls) => {
-    await handler({ channelId: 'default', sessionId: 'sess-1' }, ctx);
-
-    assert.equal(ctx.calls.fetch.length, 0);
-    assert.deepEqual(ctx.calls.getSessionHistory, ['sess-1']);
-    assert.equal(telegramCalls.length, 1);
-    assert.equal(telegramCalls[0].body.text, 'Total amount: $1,095');
-  });
-});
-
-test('skips the fetch/getSessionHistory call entirely when the event already carries result (host-triggered path)', async () => {
+test('sends the reply text the event carries', async () => {
   const ctx = makeCtx();
 
   await withMockTelegramFetch(async (telegramCalls) => {
     await handler({ channelId: 'default', sessionId: 'sess-2', result: 'Done.' }, ctx);
 
-    assert.equal(ctx.calls.getSessionHistory.length, 0);
+    assert.equal(telegramCalls.length, 1);
     assert.equal(telegramCalls[0].body.text, 'Done.');
+  });
+});
+
+// A relay with nothing to say is not a delivered reply: it used to fall back to a history lookup that answered 404 for every
+// host-run session and returned quietly, which read as delivered.
+test('a relay with no reply text throws, and sends nothing', async () => {
+  const ctx = makeCtx();
+  await withMockTelegramFetch(async (telegramCalls) => {
+    await assert.rejects(handler({ channelId: 'default', sessionId: 's', result: '  ' }, ctx), /no reply text/);
+    await assert.rejects(handler({ channelId: 'default', sessionId: 's' }, ctx), /no reply text/);
+    assert.equal(telegramCalls.length, 0);
   });
 });
 

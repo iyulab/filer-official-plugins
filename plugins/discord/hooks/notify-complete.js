@@ -1,3 +1,19 @@
+// How the run ended: `outcome` is completed / unfulfilled / failed, with Filer's `reason` when it is not completed.
+const LOOKS = {
+  completed: { title: 'Agent Task Complete', color: 3066993 },
+  unfulfilled: { title: 'Agent Task Not Fully Done', color: 15105570 },
+  failed: { title: 'Agent Task Failed', color: 15158332 },
+};
+const UNKNOWN = { title: 'Agent Task Finished', color: 9807270 };
+
+function description(event) {
+  const result = typeof event.result === 'string' && event.result ? event.result : null;
+  const reason = typeof event.reason === 'string' && event.reason ? event.reason : null;
+  if (event.outcome === 'failed') return reason ?? result ?? 'No reason given';
+  if (event.outcome === 'unfulfilled') return [reason, result].filter(Boolean).join('\n\n') || 'Task not fully done';
+  return result ?? 'Task completed';
+}
+
 export default async function(event, ctx) {
   const enabled = await ctx.settings.get('discord.notifyOnAgentComplete');
   if (!enabled) return;
@@ -17,7 +33,7 @@ export default async function(event, ctx) {
 
   const username = await ctx.settings.get('discord.username') || 'Filer';
   const duration = event.duration ? `${Math.round(event.duration / 1000)}s` : 'unknown';
-  const summary = typeof event.result === 'string' && event.result ? event.result : 'Task completed';
+  const look = LOOKS[event.outcome] ?? UNKNOWN;
 
   try {
     await ctx.fetch(webhookUrl, {
@@ -26,9 +42,9 @@ export default async function(event, ctx) {
       body: JSON.stringify({
         username,
         embeds: [{
-          title: 'Agent Task Complete',
-          description: summary,
-          color: 3066993,
+          title: look.title,
+          description: description(event),
+          color: look.color,
           fields: [
             { name: 'Duration', value: duration, inline: true },
           ],

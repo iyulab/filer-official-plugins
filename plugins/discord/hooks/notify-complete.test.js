@@ -35,3 +35,23 @@ test('notify-complete falls back to a placeholder when result is missing', async
   assert.equal(calls.length, 1);
   assert.equal(calls[0].body.embeds[0].description, 'Task completed');
 });
+
+test('notify-complete marks a failed run as failed, with the reason', async () => {
+  const calls = [];
+  await handler({ duration: 3000, result: '[error] boom', outcome: 'failed', reason: 'The model service did not answer.' }, makeCtx(calls));
+
+  const embed = calls[0].body.embeds[0];
+  assert.equal(embed.title, 'Agent Task Failed');
+  assert.equal(embed.description, 'The model service did not answer.');
+  assert.notEqual(embed.color, 3066993, 'a failure is not drawn in the success colour');
+});
+
+test('notify-complete titles a completed run complete and an unfulfilled one not fully done', async () => {
+  const calls = [];
+  await handler({ duration: 1000, result: 'Done.', outcome: 'completed' }, makeCtx(calls));
+  await handler({ duration: 1000, result: 'Wrote 2 of 3.', outcome: 'unfulfilled', reason: 'One output was not written.' }, makeCtx(calls));
+
+  assert.equal(calls[0].body.embeds[0].title, 'Agent Task Complete');
+  assert.equal(calls[1].body.embeds[0].title, 'Agent Task Not Fully Done');
+  assert.equal(calls[1].body.embeds[0].description, 'One output was not written.\n\nWrote 2 of 3.');
+});
