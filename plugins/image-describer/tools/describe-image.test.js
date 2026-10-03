@@ -50,6 +50,7 @@ test('describe_image sends the image to the configured model and returns its tex
     assert.equal(calls.length, 1);
     assert.deepEqual(calls[0].options.imageUrls, [`data:image/png;base64,${PNG.toString('base64')}`]);
     assert.match(calls[0].prompt, /only what the image shows/i);
+    assert.equal(calls[0].options.maxTokens, undefined, "a reasoning model needs the host's default budget");
   });
 });
 

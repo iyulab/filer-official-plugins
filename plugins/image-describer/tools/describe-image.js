@@ -47,7 +47,8 @@ module.exports = async function handler(params, ctx) {
     const text = await ctx.ai.complete(question, {
       imageUrls: [`data:${mimeType};base64,${buffer.toString('base64')}`],
       temperature: 0.2,
-      maxTokens: 400,
+      // No maxTokens: a reasoning model on a remote route thinks inside the same budget (the host turns reasoning
+      // off only where it can), and a cap of 400 left text-heavy pictures with an empty answer.
     });
 
     const description = typeof text === 'string' ? text.trim() : '';
