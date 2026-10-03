@@ -13,6 +13,7 @@
   "bundled": false,
   "capabilities": ["describe-image"],
   "permissions": {
+    "ai": { "complete": true },
     "fs": {
       "read": {
         "parameter": true,

@@ -17,7 +17,7 @@
       "name": "discord",
       "source": "./plugins/discord",
       "description": "Send messages via Discord webhooks",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "category": "messaging",
       "tags": ["messaging", "notification"]
     },
@@ -25,7 +25,7 @@
       "name": "slack",
       "source": "./plugins/slack",
       "description": "Send messages to Slack channels via Incoming Webhooks",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "category": "messaging",
       "tags": ["slack", "messaging", "notification"]
     },

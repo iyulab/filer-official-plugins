@@ -1,17 +1,16 @@
 export default async function(params, ctx) {
   // Resolve webhookUrl: channel integration > global default
   let webhookUrl = null;
-  try {
-    const session = await ctx.session.getActive();
-    if (session) {
-      const channelId = session.channelId;
-      if (channelId && channelId !== 'default') {
-        const config = await ctx.channels.getIntegrationConfig(channelId, 'slack');
-        if (config?.webhookUrl) webhookUrl = config.webhookUrl;
-      }
+  // The channel this tool call came from (Telegram's tools read the same field). A session record carries no channel
+  // id, so the lookup used to come back empty every time.
+  const channelId = ctx.channelId;
+  if (channelId && channelId !== 'default') {
+    try {
+      const config = await ctx.channels.getIntegrationConfig(channelId, 'slack');
+      if (config?.webhookUrl) webhookUrl = config.webhookUrl;
+    } catch (e) {
+      ctx.log.warn(`Channel-scoped Slack webhook lookup failed, falling back to the global webhook: ${e.message}`);
     }
-  } catch (e) {
-    ctx.log.warn(`Channel-scoped Slack webhook lookup failed, falling back to the global webhook: ${e.message}`);
   }
   if (!webhookUrl) webhookUrl = await ctx.settings.get('slack.webhookUrl');
   if (!webhookUrl) throw new Error('Slack Webhook URL not configured. Set it in Connect > Slack Integration > Settings.');
