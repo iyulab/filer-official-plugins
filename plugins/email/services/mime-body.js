@@ -60,9 +60,8 @@ function findTextPart(structure) {
  * container node is never itself an attachment — only its leaf children can
  * carry content, so containers are walked through, not collected.
  *
- * ISSUE-filer-20260820-email-inbound-attachments-silently-dropped.md.
- * HD-53 step 1: this plugin never looked at what findTextPart skips — fixed
- * by this function existing at all. HD-56 step 2: `part` is included so a
+ * Without it this plugin never looked at what findTextPart skips, and an
+ * attachment was dropped without a trace. `part` is included so a
  * caller can pass it straight to imapflow's `client.download(uid, part,
  * {uid:true})` (the same shape downloadTextBody already uses) to fetch the
  * actual bytes — this module stays pure/side-effect-free per its header, so
@@ -94,8 +93,7 @@ function findAttachmentParts(structure) {
   return attachments;
 }
 
-// HD-56 step 2 (ISSUE-filer-20260820-email-inbound-attachments-silently-dropped.md):
-// client-side pre-filters only, to avoid downloading an attachment over IMAP
+// Client-side pre-filters only, to avoid downloading an attachment over IMAP
 // that the host would reject anyway. The host (`InboundAttachmentPersister.cs`)
 // is the authoritative check — it re-validates size against the live
 // FilerRagOptions.MaxFileSizeMB and re-checks the same extension denylist, so

@@ -24,8 +24,8 @@ async function withTempDir(fn) {
   }
 }
 
-// 4x4 synthetic RGBA image, guaranteed-valid by construction (not a hand-typed binary fixture —
-// cycle-580's spike found a hand-typed base64 PNG was silently corrupt and wasted a debugging pass).
+// 4x4 synthetic RGBA image, guaranteed-valid by construction (not a hand-typed binary fixture — a
+// hand-typed base64 PNG can be silently corrupt, and the test then fails for the wrong reason).
 // width/height default to 4x4 (16 distinct colors, a power of two by construction); pass a smaller
 // pair to get a non-power-of-two distinct color count (each pixel's color is unique by formula).
 function makeTestImageData(width = 4, height = 4) {

@@ -4,10 +4,10 @@ const { Readable } = require('node:stream');
 const { handleMessage, _setClientForTesting } = require('./imap-service.js');
 const reverseIndex = require('./reverse-channel-index.js');
 
-// HD-91 regression guard (cycle-647 follow-through): handleMessage must route inbound email
+// Regression guard: handleMessage must route inbound email
 // through ctx.triggerInbound (a fixed, non-SSRF-checked host call) — never ctx.fetch, which
 // unconditionally denies the localhost/127.0.0.1 host this call always targets (see
-// plugin-context.ts / plugin-secure-context.ts's HD-91 comments).
+// the host's plugin context, which documents the same rule).
 
 function makeCtx({ triggerInboundResponse } = {}) {
   const calls = { triggerInbound: [], fetch: [] };

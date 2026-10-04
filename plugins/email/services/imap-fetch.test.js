@@ -14,7 +14,7 @@ const reverseIndex = require('./reverse-channel-index.js');
 // Cursor invariant under test: every UID <= email.imapCursor.lastUid was either delivered to
 // the host or explicitly given up on after MAX_DELIVERY_ATTEMPTS. A transient failure must not
 // advance the cursor past the message that failed (that is how an email used to vanish on a
-// blip — the ROADMAP's HD-31 remainder), and the retry ledger (email.imapRetry) bounds how long
+// blip), and the retry ledger (email.imapRetry) bounds how long
 // one bad message can hold the mailbox.
 
 const CURSOR_KEY = 'email.imapCursor';

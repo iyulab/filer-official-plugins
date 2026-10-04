@@ -1,7 +1,7 @@
 /**
  * Email IMAP Inbound Listener
  * Connects to an IMAP mailbox via imapflow, auto-idles on INBOX, and routes
- * new mail to a Filer agent run via the CR-1 unified inbound-trigger
+ * new mail to a Filer agent run via the unified inbound-trigger
  * endpoint — the email-plugin counterpart to telegram/services/polling-service.js.
  */
 
@@ -247,8 +247,7 @@ function scheduleRetry(ctx, attempts) {
  * `next()` here would wait on `handleMessage`, which needs a second command on the very
  * connection FETCH is still holding. That circular wait is a genuine deadlock, not a timeout:
  * nothing ever rejects, so the caller (the coalescing guard's in-flight promise) hangs
- * forever — exactly the drain-fetch hang this fixes
- * (`ISSUE-filer-20260820-imap-post-reconnect-drain-fetch-hangs-silently.md`). Draining the
+ * forever — the drain-fetch hang after a reconnect. Draining the
  * metadata-only fetch fully into `messages` first, then downloading each body afterward,
  * keeps the two IMAP commands strictly sequential on the connection.
  * @param {object} ctx - PluginContext
@@ -393,7 +392,7 @@ async function handleMessage(ctx, message) {
     // Resolve before downloading: an unmapped, unallowlisted sender is
     // dropped without spending a second IMAP command on its body. Mirrors
     // telegram/services/polling-service.js's own "no channelId -> drop"
-    // gate — see ISSUE-filer-20260820-imap-inbound-trigger-no-sender-allowlist.md.
+    // gate (see reverse-channel-index.js for why there is an allowlist at all).
     // Deliberately no sender address here — this line ends up verbatim in
     // ~/.filer/logs/ui-{date}.log and from there in user-shareable support bundles.
     ctx.log.warn(`Inbound email rejected — sender not on the allowlist (uid=${message.uid})`);
@@ -403,11 +402,9 @@ async function handleMessage(ctx, message) {
   const download = await downloadTextBody(ctx, message.uid, message.bodyStructure);
   const content = await text(download.content);
 
-  // ISSUE-filer-20260820-email-inbound-attachments-silently-dropped.md.
-  // HD-53 step 1: findTextPart() above already skips attachment parts to
-  // find the real body; nothing used to look at what it skipped, so an
-  // invoice/contract/etc. attachment vanished with no trace anywhere.
-  // HD-56 step 2: the actual save now happens host-side (channel.Path is
+  // findTextPart() above skips attachment parts to find the real body;
+  // nothing used to look at what it skipped, so an invoice/contract/etc.
+  // attachment vanished with no trace anywhere. The actual save happens host-side (channel.Path is
   // resolved there, not here — see TriggerEndpoints.cs /
   // InboundAttachmentPersister.cs) — this plugin's job is only to resolve
   // and base64-encode the bytes; the host appends the real saved/rejected
@@ -431,10 +428,10 @@ async function handleMessage(ctx, message) {
 
   const messageId = message.envelope?.messageId || `email-${message.uid}`;
 
-  // CR-1 (Sprint 42): route through the unified /api/triggers/inbound
+  // Route through the unified /api/triggers/inbound
   // endpoint, same as telegram/services/polling-service.js.
   //
-  // HD-91: ctx.triggerInbound, not ctx.fetch — this always targets the host's own
+  // ctx.triggerInbound, not ctx.fetch — this always targets the host's own
   // localhost origin, which ctx.fetch's SSRF deny-list unconditionally blocks.
   let resp;
   try {
@@ -469,7 +466,7 @@ async function handleMessage(ctx, message) {
 
   if (resp.status === 404) {
     // Two structurally different things return 404 here: a genuinely
-    // missing endpoint on a pre-CR-1 host (ASP.NET's default 404, no
+    // missing endpoint on an older host (ASP.NET's default 404, no
     // body shape to speak of) vs. a real routing rejection from a
     // current host's /api/triggers/inbound (Results.NotFound(new
     // {error: "..."}) for "channel not registered" / "no working agent
@@ -493,11 +490,11 @@ async function handleMessage(ctx, message) {
       return;
     }
 
-    // A bare 404 with no JSON error body means the host predates CR-1 and doesn't expose
+    // A bare 404 with no JSON error body means the host predates that endpoint and doesn't expose
     // /api/triggers/inbound at all. There is no fallback for this — ui/host/ai ship together
-    // in this bundled deployment, so a pre-CR-1 host paired with this plugin build isn't a
+    // in this bundled deployment, so an older host paired with this plugin build isn't a
     // real deployment shape, only a defensive case. Log and drop.
-    ctx.log.warn('Host does not support /api/triggers/inbound (pre-CR-1 host) — dropping inbound email');
+    ctx.log.warn('Host does not support /api/triggers/inbound (older host) — dropping inbound email');
     return;
   }
 
@@ -515,8 +512,8 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-// handleMessage / fetchNewMessages / primeCursor exported for unit testing only (HD-91
-// follow-through, cycle-647; retry ledger, cycle-899) — start/stop remain the real public API.
+// handleMessage / fetchNewMessages / primeCursor exported for unit testing only (inbound routing
+// and the retry ledger) — start/stop remain the real public API.
 // _setClientForTesting injects a fake IMAP client so the calls that read the module-level
 // `client` are testable without a real IMAP connection.
 module.exports = {

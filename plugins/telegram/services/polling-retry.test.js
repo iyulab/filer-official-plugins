@@ -3,8 +3,8 @@ const assert = require('node:assert/strict');
 const { processUpdates, handleUpdate } = require('./polling-service.js');
 const reverseIndex = require('./reverse-channel-index.js');
 
-// Offset invariant under test (mirrors email/services/imap-service.js's cursor invariant,
-// cycle-899): every update_id < telegram.pollOffset was delivered to the host or explicitly
+// Offset invariant under test (mirrors email/services/imap-service.js's cursor invariant):
+// every update_id < telegram.pollOffset was delivered to the host or explicitly
 // given up on. Before this, pollLoop advanced the offset *before* handleUpdate ran and
 // handleUpdate swallowed the host being unreachable, so a Telegram message that arrived while
 // the host was restarting was acknowledged to Telegram and never delivered.

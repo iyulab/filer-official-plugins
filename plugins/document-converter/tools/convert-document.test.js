@@ -26,8 +26,8 @@ async function withTempDir(fn) {
   }
 }
 
-// Built with a real zip library, not hand-typed bytes — convert-image.test.js's own precedent
-// (cycle-580) found a hand-typed binary fixture was silently corrupt and wasted a debugging pass.
+// Built with a real zip library, not hand-typed bytes — a hand-typed binary fixture can be silently
+// corrupt (convert-image.test.js builds its image the same way for the same reason).
 async function writeTestDocx(dir, bodyText) {
   const contentTypes = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">

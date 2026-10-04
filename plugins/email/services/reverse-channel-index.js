@@ -13,8 +13,7 @@
  * "default chat" is a natural, safe default), email has no equivalent
  * built-in identity — anyone on the internet can address the configured
  * mailbox. Routing every unmapped sender to 'default' unconditionally
- * (v1's original behavior) is exactly the exposure
- * ISSUE-filer-20260820-imap-inbound-trigger-no-sender-allowlist.md flags.
+ * (v1's original behavior) let any sender start a run.
  * Secure-by-default: an unset/empty allowlist means no unmapped sender is
  * ever routed, mirroring polling-service.js's own "no channelId -> drop the
  * message" gate rather than inventing a different failure mode for email.
@@ -84,7 +83,7 @@ function resolveFromIndex(idx, list, fromAddress) {
 async function build(ctx) {
   index.clear();
 
-  // HD-91: ctx.listChannels, not ctx.fetch — this always targets the host's own localhost
+  // ctx.listChannels, not ctx.fetch — this always targets the host's own localhost
   // origin, which ctx.fetch's SSRF deny-list unconditionally blocks (this call was silently
   // returning [] on every real run before this fix).
   const channelList = await ctx.listChannels().catch(() => []);

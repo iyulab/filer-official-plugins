@@ -15,7 +15,7 @@ async function build(ctx) {
   index.clear();
   defaultChatId = (await ctx.settings.get('telegram.defaultChatId')) || null;
 
-  // List all channels via host API. HD-91: ctx.listChannels, not ctx.fetch — this always
+  // List all channels via host API. ctx.listChannels, not ctx.fetch — this always
   // targets the host's own localhost origin, which ctx.fetch's SSRF deny-list unconditionally
   // blocks (this call was silently returning [] on every real run before this fix).
   const channelList = await ctx.listChannels().catch(() => []);

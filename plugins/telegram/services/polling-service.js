@@ -12,7 +12,7 @@ let isRunning = false;
 
 const OFFSET_KEY = 'telegram.pollOffset';
 // Per-update delivery attempts, `{ [update_id]: attempts }`, persisted so a restart does not
-// reset the count. Mirrors email/services/imap-service.js's retry ledger (cycle-899).
+// reset the count. Mirrors email/services/imap-service.js's retry ledger.
 const RETRY_KEY = 'telegram.pollRetry';
 // An update that fails delivery this many times is given up on: the offset moves past it and
 // an error names the update id. Bounds how long one poison update can hold the ones behind it.
@@ -199,12 +199,12 @@ async function handleUpdate(ctx, botToken, update) {
   // (support-bundle.ts copies log files wholesale, no redaction pass).
   ctx.log.info(`Inbound message routed to channel=${channelId} (${text.length} chars)`);
 
-  // CR-1 (Sprint 42): route through the unified /api/triggers/inbound
+  // Route through the unified /api/triggers/inbound
   // endpoint so the host can tag the agent run with
   // PipelineEventOrigin.Inbound and flow it through the same trigger
   // model as file events.
   //
-  // HD-91: ctx.triggerInbound, not ctx.fetch — this always targets the host's own
+  // ctx.triggerInbound, not ctx.fetch — this always targets the host's own
   // localhost origin, which ctx.fetch's SSRF deny-list unconditionally blocks.
   const messageId = `telegram-${update.update_id}`;
 
@@ -233,7 +233,7 @@ async function handleUpdate(ctx, botToken, update) {
 
   if (resp.status === 404) {
     // Two structurally different things return 404 here: a genuinely missing endpoint on a
-    // pre-CR-1 host (ASP.NET's default 404, no body shape to speak of) vs. a real routing
+    // older host (ASP.NET's default 404, no body shape to speak of) vs. a real routing
     // rejection from a current host's /api/triggers/inbound (Results.NotFound(new
     // {error: "..."}) for "channel not registered" / "no working agent bound to folder" — see
     // TriggerEndpoints.cs). Falling back to the legacy path on a routing rejection would
@@ -256,11 +256,11 @@ async function handleUpdate(ctx, botToken, update) {
       return;
     }
 
-    // A bare 404 with no JSON error body means the host predates CR-1 and doesn't expose
+    // A bare 404 with no JSON error body means the host predates that endpoint and doesn't expose
     // /api/triggers/inbound at all. There is no fallback for this — ui/host/ai ship together
-    // in this bundled deployment, so a pre-CR-1 host paired with this plugin build isn't a
+    // in this bundled deployment, so an older host paired with this plugin build isn't a
     // real deployment shape, only a defensive case. Log and drop.
-    ctx.log.warn('Host does not support /api/triggers/inbound (pre-CR-1 host) — dropping inbound message');
+    ctx.log.warn('Host does not support /api/triggers/inbound (older host) — dropping inbound message');
     return;
   }
 
@@ -300,7 +300,7 @@ async function handleCallbackQuery(ctx, botToken, callbackQuery) {
   await ctx.store.delete(`hitl:${shortKey}`);
 
   try {
-    // HD-91: ctx.respondToHitl, not ctx.fetch — this always targets the host's own
+    // ctx.respondToHitl, not ctx.fetch — this always targets the host's own
     // localhost origin, which ctx.fetch's SSRF deny-list unconditionally blocks (every
     // Telegram HITL approve/deny silently failed this call before this fix).
     await ctx.respondToHitl(mapping.agentId, mapping.requestId, approved, reason);
@@ -331,6 +331,6 @@ function sleep(ms, signal) {
   });
 }
 
-// handleUpdate/handleCallbackQuery (HD-91) and processUpdates (cycle-899/900 retry ledger)
+// handleUpdate/handleCallbackQuery (inbound routing) and processUpdates (retry ledger)
 // exported for unit testing only — start/stop remain the real public API.
 module.exports = { start, stop, handleUpdate, handleCallbackQuery, processUpdates };

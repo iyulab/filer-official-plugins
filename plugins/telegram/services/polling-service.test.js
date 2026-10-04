@@ -3,10 +3,10 @@ const assert = require('node:assert/strict');
 const { handleUpdate, handleCallbackQuery } = require('./polling-service.js');
 const reverseIndex = require('./reverse-channel-index.js');
 
-// HD-91 regression guard: handleUpdate must route inbound messages through
+// Regression guard: handleUpdate must route inbound messages through
 // ctx.triggerInbound (a fixed, non-SSRF-checked host call) — never ctx.fetch,
 // which unconditionally denies the localhost/127.0.0.1 host this call always
-// targets (see plugin-context.ts / plugin-secure-context.ts's HD-91 comments).
+// targets (the host's plugin context documents the same rule).
 
 function makeCtx({ triggerInboundResponse, store } = {}) {
   const calls = { triggerInbound: [], fetch: [], respondToHitl: [], storeDelete: [] };
@@ -94,8 +94,8 @@ test('handleUpdate logs and does not throw when triggerInbound rejects the routi
   );
 });
 
-// cycle-647 follow-through: a 404 with a JSON `error` body is a real routing rejection (channel
-// not registered / no working agent bound), not a pre-CR-1 host — must NOT fall back to the
+// A 404 with a JSON `error` body is a real routing rejection (channel
+// not registered / no working agent bound), not an older host — must NOT fall back to the
 // legacy session path (that would silently lose origin tagging). Mirrors imap-service.js's
 // already-correct handleMessage.
 test('handleUpdate treats a 404 with a JSON error body as a routing rejection, not a legacy-host fallback', async () => {
@@ -112,9 +112,9 @@ test('handleUpdate treats a 404 with a JSON error body as a routing rejection, n
   assert.equal(ctx.calls.fetch.length, 0, 'must not fall through to the legacy ctx.fetch path');
 });
 
-// A genuinely missing endpoint (pre-CR-1 host) returns a bare 404 with no JSON error body.
+// A genuinely missing endpoint (older host) returns a bare 404 with no JSON error body.
 // There is no legacy fallback for this any more (routeViaLegacySessionPath removed — ui/host/ai
-// ship together in this bundled deployment, so a pre-CR-1 host isn't a real deployment shape) —
+// ship together in this bundled deployment, so an older host isn't a real deployment shape) —
 // it just logs and drops.
 test('handleUpdate logs and drops on a bare 404 with no JSON error body, does not call ctx.fetch', async () => {
   const ctx = makeCtx({ triggerInboundResponse: new Response('Not Found', { status: 404 }) });
@@ -130,7 +130,7 @@ test('handleUpdate logs and drops on a bare 404 with no JSON error body, does no
   assert.equal(ctx.calls.fetch.length, 0, 'must not attempt any fallback ctx.fetch call');
 });
 
-// HD-91 regression guard: an inline-keyboard HITL Approve/Deny tap must relay the decision via
+// Regression guard: an inline-keyboard HITL Approve/Deny tap must relay the decision via
 // ctx.respondToHitl, never ctx.fetch — before this fix, every Telegram HITL response silently
 // failed this call and reported "Error processing response" back to the user.
 test('handleCallbackQuery relays an approve tap via ctx.respondToHitl, not ctx.fetch', async () => {

@@ -51,8 +51,8 @@ test('findTextPart returns null for an empty/undefined structure', () => {
   assert.equal(findTextPart(null), null);
 });
 
-// ── findAttachmentParts (HD-53 step 1: metadata; HD-56 step 2: `part` added
-// so a caller can download the actual bytes) ──
+// ── findAttachmentParts (metadata, plus `part` so a caller can download the
+// actual bytes) ──
 
 test('findAttachmentParts returns empty for a simple text-only message', () => {
   const structure = { type: 'text/plain' };
@@ -159,8 +159,8 @@ test('findAttachmentParts includes part so a caller can download it', () => {
   assert.equal(findAttachmentParts(structure)[0].part, '2');
 });
 
-// ── isBlockedAttachmentType / exceedsDownloadSizeCeiling (HD-56 step 2:
-// client-side pre-filters — the host is the authoritative check) ──
+// ── isBlockedAttachmentType / exceedsDownloadSizeCeiling (client-side
+// pre-filters — the host is the authoritative check) ──
 
 test('isBlockedAttachmentType blocks each owner-decided script/executable extension', () => {
   for (const ext of ['.exe', '.bat', '.cmd', '.ps1', '.vbs', '.js']) {

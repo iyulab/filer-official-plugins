@@ -34,8 +34,8 @@ there manually during dev.
 
 Until `PulsaRedact.SDK` is published to nuget.org, restoring this project needs a locally configured
 NuGet source pointing at wherever that package is packed to during development — no path or feed
-location is hardcoded in this project's `.csproj` on purpose (see the sibling
-`ISSUE-filer-official-plugins-20260905-hardcoded-local-nuget-path-in-public-csproj.md` for why); add
+location is hardcoded in this project's `.csproj` on purpose (a machine-specific path does not belong
+in a public project file); add
 one with `dotnet nuget add source <your local feed path>` before restoring, and drop it again once the
 package ships to nuget.org and the `PackageReference` resolves from there directly.
 
