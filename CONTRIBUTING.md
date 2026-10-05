@@ -33,7 +33,7 @@ plugins/my-plugin/
   "license": "MIT",
   "runtime": "node",
   "engines": { "filer": ">=0.2.0" },
-  "bundled": true,
+  "bundled": false,
   "capabilities": ["describe-image"],
 
   "contributes": {
@@ -50,6 +50,8 @@ plugins/my-plugin/
 ```
 
 The field-by-field rules for every block above live at https://filer-ai.com/developers/reference/manifest.
+
+`bundled: true` makes Filer install the plugin on its own, the first time it starts with the plugin in this catalog, and never again once the person removes it. Filer honours it only for this repository, and the maintainers decide which plugins carry it — leave it `false` in a contribution.
 
 ## Development
 

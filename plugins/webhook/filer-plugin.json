@@ -9,7 +9,7 @@
   "keywords": ["webhook", "http", "notification", "integration"],
   "runtime": "node",
   "engines": { "filer": ">=0.2.0" },
-  "bundled": true,
+  "bundled": false,
   "capabilities": ["messenger"],
   "permissions": {
     "fetch": {

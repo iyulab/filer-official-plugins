@@ -9,7 +9,7 @@
   "keywords": ["notion", "documentation", "knowledge-base"],
   "runtime": "node",
   "engines": { "filer": ">=0.2.0" },
-  "bundled": true,
+  "bundled": false,
   "capabilities": ["note-append"],
   "permissions": {
     "fetch": {

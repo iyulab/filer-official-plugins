@@ -10,7 +10,7 @@
   "keywords": ["discord", "messaging", "notification", "webhook"],
   "runtime": "node",
   "engines": { "filer": ">=0.2.0" },
-  "bundled": true,
+  "bundled": false,
   "capabilities": ["messenger"],
   "permissions": {
     "fetch": {

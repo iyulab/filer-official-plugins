@@ -10,7 +10,7 @@
   "keywords": ["email", "smtp", "notification"],
   "runtime": "node",
   "engines": { "filer": ">=0.2.0" },
-  "bundled": true,
+  "bundled": false,
   "capabilities": ["messenger", "inbound-channel"],
   "permissions": {
     "fetch": {

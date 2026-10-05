@@ -10,7 +10,7 @@
   "category": "developer",
   "runtime": "node",
   "engines": { "filer": ">=0.9.0" },
-  "bundled": false,
+  "bundled": true,
   "capabilities": ["check-web-app"],
   "permissions": {
     "fs": {
