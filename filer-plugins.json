@@ -96,10 +96,10 @@
     {
       "name": "data-converter",
       "source": "./plugins/data-converter",
-      "description": "Convert CSV, JSON, and Excel data files to another format",
-      "version": "0.1.0",
+      "description": "Convert CSV, JSON, and Excel data files to another format, and replace personal data in chosen columns with consistent pseudonyms",
+      "version": "0.2.0",
       "category": "data",
-      "tags": ["convert", "csv", "json", "excel", "xlsx", "data"]
+      "tags": ["convert", "csv", "json", "excel", "xlsx", "data", "pseudonymize", "mask", "privacy"]
     },
     {
       "name": "image-converter",

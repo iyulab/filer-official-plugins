@@ -1,17 +1,17 @@
 {
   "name": "data-converter",
   "displayName": "Data Converter",
-  "version": "0.1.0",
-  "description": "Convert CSV, JSON, and Excel data files to another of those formats",
+  "version": "0.2.0",
+  "description": "Convert CSV, JSON, and Excel data files to another of those formats, and replace personal data in chosen columns with consistent pseudonyms",
   "author": { "name": "iyulab", "url": "https://github.com/iyulab" },
   "repository": "https://github.com/iyulab/filer-official-plugins",
   "license": "MIT",
-  "keywords": ["convert", "csv", "json", "excel", "xlsx", "data"],
+  "keywords": ["convert", "csv", "json", "excel", "xlsx", "data", "pseudonymize", "mask", "privacy"],
   "category": "data",
   "runtime": "node",
   "engines": { "filer": ">=0.2.0" },
   "bundled": false,
-  "capabilities": ["convert-data"],
+  "capabilities": ["convert-data", "pseudonymize-data"],
   "permissions": {
     "fs": {
       "read": {
@@ -33,6 +33,14 @@
         "description": "Convert a CSV, JSON, or Excel data file to another of those formats. Requires path, targetFormat, and outputPath. Refuses to overwrite an existing file at outputPath.",
         "schema": "./tools/convert-data.schema.json",
         "handler": "./tools/convert-data.js"
+      },
+      {
+        "id": "pseudonymize_columns",
+        "annotations": { "readOnlyHint": false, "destructiveHint": false, "openWorldHint": false },
+        "title": "Pseudonymize Columns",
+        "description": "Write a copy of a CSV, JSON, or Excel data file in which the named columns hold pseudonyms instead of their values (the same value always gets the same pseudonym, e.g. Name-0001), plus a key file that maps each pseudonym back. The source file is not changed. Use it to share a table without the personal data in it; pass the exact column names.",
+        "schema": "./tools/pseudonymize-columns.schema.json",
+        "handler": "./tools/pseudonymize-columns.js"
       }
     ],
     "actions": [

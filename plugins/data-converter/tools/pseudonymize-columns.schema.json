@@ -1,0 +1,22 @@
+{
+  "type": "object",
+  "properties": {
+    "path": {
+      "type": "string",
+      "format": "file-path",
+      "description": "Source data file (.csv, .json, .xlsx, .xls). It is not changed."
+    },
+    "columns": {
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 1,
+      "description": "Exact names of the columns to replace with pseudonyms (for example the columns holding names, emails or phone numbers)."
+    },
+    "outputPath": {
+      "type": "string",
+      "format": "file-path",
+      "description": "Optional. Where to write the pseudonymized copy; by default <name>.pseudonymized.<ext> beside the source. Must not already exist. The key file is written beside it as <copy name>.key.csv."
+    }
+  },
+  "required": ["path", "columns"]
+}
