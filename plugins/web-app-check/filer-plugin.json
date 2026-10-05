@@ -1,7 +1,7 @@
 {
   "name": "web-app-check",
   "displayName": "Web App Check",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Open a web page from your folder in a hidden browser and report what a person would see: the text on screen, any errors the page raised, and whether what it saves is still there after a reload",
   "author": { "name": "iyulab", "url": "https://github.com/iyulab" },
   "repository": "https://github.com/iyulab/filer-official-plugins",
