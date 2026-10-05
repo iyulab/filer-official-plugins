@@ -9,6 +9,12 @@ function stemOf(filePath) {
   return dot > 0 ? name.slice(0, dot) : name
 }
 
+/** The folder part of a path (its own separator kept); "" when the path has none. */
+function folderOf(filePath) {
+  const cut = Math.max(filePath.lastIndexOf('/'), filePath.lastIndexOf('\\'))
+  return cut > 0 ? filePath.slice(0, cut) : ''
+}
+
 /** `folder` + `name`, with the folder's own separator. */
 function joinPath(folder, name) {
   if (folder.endsWith('/') || folder.endsWith('\\')) return `${folder}${name}`
@@ -59,6 +65,23 @@ module.exports = async function handler(params, ctx) {
   const sourceExt = extensionOf(sourcePath)
   if (!SOURCE_EXTENSIONS.has(sourceExt)) {
     return { success: false, error: `Unsupported file format: .${sourceExt}. Supported: csv, json, xlsx, xls` }
+  }
+  // A copy of a copy pseudonymizes pseudonyms and writes a second key that maps them to the first copy's pseudonyms — never
+  // what is wanted, and an easy step for a small model that reads the copy it just made as a new table.
+  if (/\.pseudonymized(\.key)?$/i.test(stemOf(sourcePath))) {
+    return {
+      success: false,
+      error: `${sourcePath} is already a pseudonymized copy (or its key). Pseudonymize the original file instead — the copy is the finished result.`,
+    }
+  }
+  // outputFolder names a folder. Given the data file itself (or another data file), the writes would try to make a folder of
+  // it and fail with a file-system error that says nothing about the argument.
+  if (SOURCE_EXTENSIONS.has(extensionOf(outputFolder)) && (await targetExists(ctx, outputFolder))) {
+    const folder = folderOf(outputFolder)
+    return {
+      success: false,
+      error: `outputFolder must be a folder, but ${outputFolder} is a file.${folder ? ` To write beside it, pass outputFolder: ${folder}` : ''}`,
+    }
   }
   const outputExt = sourceExt === 'xls' ? 'xlsx' : sourceExt
   // Both files go in the folder the call names (granted to this tool for the call): the copy is what may be shared, the key

@@ -122,3 +122,35 @@ test('no columns named is refused', async () => {
   assert.equal(result.success, false);
   assert.match(result.error, /at least one column/);
 });
+
+// A small model passed the source file as outputFolder and got "EEXIST: file already exists, mkdir '…customers.csv'".
+test('outputFolder naming a data file is refused with the folder to pass instead', async () => {
+  await withTempDir(async dir => {
+    const source = path.join(dir, 'customers.csv');
+    fs.writeFileSync(source, people);
+
+    const result = await handler({ path: source, columns: ['name'], outputFolder: source }, fsCtx());
+
+    assert.equal(result.success, false);
+    assert.match(result.error, /outputFolder must be a folder/);
+    assert.ok(result.error.includes(`pass outputFolder: ${dir}`), result.error);
+    assert.deepEqual(fs.readdirSync(dir), ['customers.csv']);
+  });
+});
+
+// A small model pseudonymized the copy it had just made, leaving customers.pseudonymized.pseudonymized.csv and a second key.
+test('a pseudonymized copy or its key is not pseudonymized again', async () => {
+  await withTempDir(async dir => {
+    const source = path.join(dir, 'customers.csv');
+    fs.writeFileSync(source, people);
+    const first = await handler({ path: source, columns: ['name'], outputFolder: dir }, fsCtx());
+    assert.equal(first.success, true);
+
+    for (const again of [first.path, first.keyPath]) {
+      const result = await handler({ path: again, columns: ['name'], outputFolder: dir }, fsCtx());
+      assert.equal(result.success, false);
+      assert.match(result.error, /already a pseudonymized copy/);
+    }
+    assert.deepEqual(fs.readdirSync(dir).sort(), ['customers.csv', 'customers.pseudonymized.csv', 'customers.pseudonymized.key.csv']);
+  });
+});
