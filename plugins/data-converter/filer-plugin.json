@@ -38,7 +38,7 @@
         "id": "pseudonymize_columns",
         "annotations": { "readOnlyHint": false, "destructiveHint": false, "openWorldHint": false },
         "title": "Pseudonymize Columns",
-        "description": "Write a copy of a CSV, JSON, or Excel data file in which the named columns hold pseudonyms instead of their values (the same value always gets the same pseudonym, e.g. Name-0001), plus a key file that maps each pseudonym back. The source file is not changed. Use it to share a table without the personal data in it; pass the exact column names.",
+        "description": "Write a copy of a CSV, JSON, or Excel data file in which the named columns hold pseudonyms instead of their values (the same value always gets the same pseudonym, e.g. Name-0001), plus a key file that maps each pseudonym back, both in the folder you name (usually the source's own). The source file is not changed. Use it to share a table without the personal data in it; pass the exact column names.",
         "schema": "./tools/pseudonymize-columns.schema.json",
         "handler": "./tools/pseudonymize-columns.js"
       }

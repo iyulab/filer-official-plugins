@@ -32,7 +32,7 @@ test('the same value gets the same pseudonym within a column, empty cells stay e
     const source = path.join(dir, 'customers.csv');
     fs.writeFileSync(source, people);
 
-    const result = await handler({ path: source, columns: ['name', 'email'] }, fsCtx());
+    const result = await handler({ path: source, columns: ['name', 'email'], outputFolder: dir }, fsCtx());
 
     assert.equal(result.success, true);
     assert.equal(result.path, path.join(dir, 'customers.pseudonymized.csv'));
@@ -56,7 +56,7 @@ test('the key file maps every pseudonym back to its value', async () => {
     const source = path.join(dir, 'customers.csv');
     fs.writeFileSync(source, people);
 
-    const result = await handler({ path: source, columns: ['name'] }, fsCtx());
+    const result = await handler({ path: source, columns: ['name'], outputFolder: dir }, fsCtx());
 
     assert.deepEqual(fs.readFileSync(result.keyPath, 'utf-8').split(/\r?\n/), [
       'column,pseudonym,original',
@@ -71,7 +71,7 @@ test('an unknown column is refused with the columns the file has, and nothing is
     const source = path.join(dir, 'customers.csv');
     fs.writeFileSync(source, people);
 
-    const result = await handler({ path: source, columns: ['Name'] }, fsCtx());
+    const result = await handler({ path: source, columns: ['Name'], outputFolder: dir }, fsCtx());
 
     assert.equal(result.success, false);
     assert.match(result.error, /No column named "Name"/);
@@ -86,7 +86,7 @@ test('an existing copy or key file is never overwritten', async () => {
     fs.writeFileSync(source, people);
     fs.writeFileSync(path.join(dir, 'customers.pseudonymized.key.csv'), 'keep me');
 
-    const result = await handler({ path: source, columns: ['name'] }, fsCtx());
+    const result = await handler({ path: source, columns: ['name'], outputFolder: dir }, fsCtx());
 
     assert.equal(result.success, false);
     assert.match(result.error, /already exists/);
@@ -105,7 +105,7 @@ test('an Excel file gets an Excel copy with its column order kept, and a column 
     XLSX.utils.book_append_sheet(book, sheet, 'Sheet1');
     fs.writeFileSync(source, XLSX.write(book, { type: 'buffer', bookType: 'xlsx' }));
 
-    const result = await handler({ path: source, columns: ['Full name'] }, fsCtx());
+    const result = await handler({ path: source, columns: ['Full name'], outputFolder: dir }, fsCtx());
 
     assert.equal(result.success, true);
     assert.equal(path.extname(result.path), '.xlsx');
@@ -118,7 +118,7 @@ test('an Excel file gets an Excel copy with its column order kept, and a column 
 });
 
 test('no columns named is refused', async () => {
-  const result = await handler({ path: 'x.csv', columns: [] }, fsCtx());
+  const result = await handler({ path: 'x.csv', columns: [], outputFolder: '.' }, fsCtx());
   assert.equal(result.success, false);
   assert.match(result.error, /at least one column/);
 });

@@ -12,11 +12,11 @@
       "minItems": 1,
       "description": "Exact names of the columns to replace with pseudonyms (for example the columns holding names, emails or phone numbers)."
     },
-    "outputPath": {
+    "outputFolder": {
       "type": "string",
-      "format": "file-path",
-      "description": "Optional. Where to write the pseudonymized copy; by default <name>.pseudonymized.<ext> beside the source. Must not already exist. The key file is written beside it as <copy name>.key.csv."
+      "format": "directory-path",
+      "description": "The folder to write the two results into — usually the source file's own folder. The copy is <name>.pseudonymized.<ext> (an .xls source gives .xlsx) and the key is <name>.pseudonymized.key.csv; neither may already exist."
     }
   },
-  "required": ["path", "columns"]
+  "required": ["path", "columns", "outputFolder"]
 }

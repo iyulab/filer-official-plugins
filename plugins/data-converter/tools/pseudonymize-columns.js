@@ -2,11 +2,17 @@
 // the same pseudonym) and reversible through a key file written beside the copy. The source file is never changed.
 const { SOURCE_EXTENSIONS, extensionOf, parseSource, serialize, toCsv, targetExists } = require('./tabular')
 
-/** `name.ext` → `name.<suffix>.<ext>` in the same folder (an .xls source gets an .xlsx copy). */
-function besideSource(sourcePath, suffix, ext) {
-  const dot = sourcePath.lastIndexOf('.')
-  const stem = dot > Math.max(sourcePath.lastIndexOf('/'), sourcePath.lastIndexOf('\\')) ? sourcePath.slice(0, dot) : sourcePath
-  return `${stem}.${suffix}.${ext}`
+/** The file name of a path, without its folder or extension. */
+function stemOf(filePath) {
+  const name = filePath.slice(Math.max(filePath.lastIndexOf('/'), filePath.lastIndexOf('\\')) + 1)
+  const dot = name.lastIndexOf('.')
+  return dot > 0 ? name.slice(0, dot) : name
+}
+
+/** `folder` + `name`, with the folder's own separator. */
+function joinPath(folder, name) {
+  if (folder.endsWith('/') || folder.endsWith('\\')) return `${folder}${name}`
+  return `${folder}${folder.includes('\\') && !folder.includes('/') ? '\\' : '/'}${name}`
 }
 
 /** A column's pseudonym prefix: its name with whitespace folded to underscores, so "First name" reads "First_name-0001". */
@@ -46,17 +52,20 @@ function pseudonymize(rows, columns) {
 }
 
 module.exports = async function handler(params, ctx) {
-  const { path: sourcePath, columns } = params
-  if (!sourcePath || !Array.isArray(columns) || columns.length === 0) {
-    return { success: false, error: 'path and at least one column name are required' }
+  const { path: sourcePath, columns, outputFolder } = params
+  if (!sourcePath || !outputFolder || !Array.isArray(columns) || columns.length === 0) {
+    return { success: false, error: 'path, outputFolder and at least one column name are required' }
   }
   const sourceExt = extensionOf(sourcePath)
   if (!SOURCE_EXTENSIONS.has(sourceExt)) {
     return { success: false, error: `Unsupported file format: .${sourceExt}. Supported: csv, json, xlsx, xls` }
   }
   const outputExt = sourceExt === 'xls' ? 'xlsx' : sourceExt
-  const outputPath = params.outputPath || besideSource(sourcePath, 'pseudonymized', outputExt)
-  const keyPath = besideSource(outputPath, 'key', 'csv')
+  // Both files go in the folder the call names (granted to this tool for the call): the copy is what may be shared, the key
+  // is what must not be.
+  const stem = stemOf(sourcePath)
+  const outputPath = joinPath(outputFolder, `${stem}.pseudonymized.${outputExt}`)
+  const keyPath = joinPath(outputFolder, `${stem}.pseudonymized.key.csv`)
 
   for (const target of [outputPath, keyPath]) {
     if (await targetExists(ctx, target)) return { success: false, error: `${target} already exists` }
