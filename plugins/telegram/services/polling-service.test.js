@@ -112,6 +112,36 @@ test('handleUpdate treats a 404 with a JSON error body as a routing rejection, n
   assert.equal(ctx.calls.fetch.length, 0, 'must not fall through to the legacy ctx.fetch path');
 });
 
+// HD-210: a 1:1 chat that no folder has been chosen to answer. The person is told why, in the chat they wrote in, with
+// the control that fixes it — instead of an unanswered message.
+test('handleUpdate tells the sender when no folder answers direct messages', async () => {
+  const ctx = makeCtx({
+    triggerInboundResponse: new Response(JSON.stringify({ error: 'No Filer folder answers…', code: 'no_direct_folder' }), { status: 404 }),
+  });
+  await reverseIndex.build(ctx);
+
+  await withMockTelegramFetch(async (telegramCalls) => {
+    await handleUpdate(ctx, 'fake-token', { update_id: 1004, message: { chat: { id: 'chat-42' }, text: 'hi' } });
+
+    assert.equal(telegramCalls.length, 1);
+    assert.match(telegramCalls[0].url, /\/sendMessage$/);
+    assert.equal(telegramCalls[0].body.chat_id, 'chat-42');
+    assert.match(telegramCalls[0].body.text, /Answer messages sent directly to Filer/);
+  });
+});
+
+test('handleUpdate sends nothing back for any other routing rejection', async () => {
+  const ctx = makeCtx({
+    triggerInboundResponse: new Response(JSON.stringify({ error: "Channel 'x' is not registered" }), { status: 404 }),
+  });
+  await reverseIndex.build(ctx);
+
+  await withMockTelegramFetch(async (telegramCalls) => {
+    await handleUpdate(ctx, 'fake-token', { update_id: 1005, message: { chat: { id: 'chat-42' }, text: 'hi' } });
+    assert.equal(telegramCalls.length, 0);
+  });
+});
+
 // A genuinely missing endpoint (older host) returns a bare 404 with no JSON error body.
 // There is no legacy fallback for this any more (routeViaLegacySessionPath removed — ui/host/ai
 // ship together in this bundled deployment, so an older host isn't a real deployment shape) —

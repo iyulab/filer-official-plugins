@@ -262,8 +262,9 @@ async function handleUpdate(ctx, botToken, update) {
     // handleMessage, which already made this distinction.
     const responseBody = await resp.text().catch(() => '');
     let routingError;
+    let routingCode;
     try {
-      routingError = JSON.parse(responseBody)?.error;
+      ({ error: routingError, code: routingCode } = JSON.parse(responseBody) ?? {});
     /* eslint-disable-next-line local/no-silent-catch -- a non-JSON body is itself the answer (the
        endpoint is missing); the legacy path below reports what happens next. */
     } catch {
@@ -272,6 +273,9 @@ async function handleUpdate(ctx, botToken, update) {
 
     if (routingError) {
       ctx.log.warn(`Inbound trigger rejected — routing problem, not a legacy-host case: ${routingError}`);
+      // A 1:1 chat with no folder chosen to answer it: tell the person in the chat they wrote in, instead of leaving
+      // their message unanswered with no reason (HD-210).
+      if (routingCode === 'no_direct_folder') await replyNoFolder(ctx, botToken, update.message.chat.id);
       return;
     }
 
@@ -288,6 +292,24 @@ async function handleUpdate(ctx, botToken, update) {
   // move on.
   const body = await resp.text().catch(() => '');
   ctx.log.warn(`Inbound trigger rejected (${resp.status}): ${body}`);
+}
+
+const NO_FOLDER_REPLY =
+  'No Filer folder answers messages here yet. In Filer, open Filer AI, choose a folder, and turn on ' +
+  '"Answer messages sent directly to Filer" under Plugins & Skills.';
+
+/**
+ * Say why a message got no answer. Best effort: a failed send is logged, and the update is not retried for it.
+ * @param {object} ctx - PluginContext
+ * @param {string} botToken - Telegram bot token
+ * @param {number|string} chatId - The chat the message came from
+ */
+async function replyNoFolder(ctx, botToken, chatId) {
+  try {
+    await telegramApi(botToken, 'sendMessage', { chat_id: chatId, text: NO_FOLDER_REPLY });
+  } catch (err) {
+    ctx.log.warn('Could not tell the sender that no folder answers direct messages:', err.message);
+  }
 }
 
 /**
