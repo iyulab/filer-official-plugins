@@ -2,11 +2,12 @@
  * Shared Telegram Bot API client and Forum Topic resolution.
  */
 
-async function telegramApiCall(botToken, method, params) {
+async function telegramApiCall(botToken, method, params, { signal } = {}) {
   const resp = await fetch(`https://api.telegram.org/bot${botToken}/${method}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(params),
+    signal,
   });
   const data = await resp.json();
   if (!data.ok) throw new Error(`Telegram ${method}: ${data.description}`);
@@ -23,13 +24,13 @@ async function telegramApiCall(botToken, method, params) {
  * shape `sendWithTopicRetry` already uses for a deleted topic, just one level
  * down, so every caller benefits without duplicating the fallback.
  */
-async function telegramApi(botToken, method, params) {
+async function telegramApi(botToken, method, params, options) {
   try {
-    return await telegramApiCall(botToken, method, params);
+    return await telegramApiCall(botToken, method, params, options);
   } catch (e) {
     if (params.parse_mode && /can't parse entities/i.test(e.message)) {
       const { parse_mode: _parseMode, ...plain } = params;
-      return await telegramApiCall(botToken, method, plain);
+      return await telegramApiCall(botToken, method, plain, options);
     }
     throw e;
   }

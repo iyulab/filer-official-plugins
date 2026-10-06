@@ -15,14 +15,11 @@ module.exports = async function(event, ctx) {
   };
   ctx.viewData.set('stats', stats);
 
-  // Start polling if enabled
-  const enablePolling = await ctx.settings.get('telegram.enablePolling');
-  if (enablePolling) {
-    try {
-      await pollingService.start(ctx);
-    } catch (err) {
-      ctx.log.error('Failed to start Telegram polling:', err.message);
-    }
+  // Start polling — the service reads the switch itself, and on-settings-changed.js applies later changes
+  try {
+    await pollingService.start(ctx);
+  } catch (err) {
+    ctx.log.error('Failed to start Telegram polling:', err.message);
   }
 
   ctx.log.info('Telegram plugin initialized');

@@ -29,6 +29,13 @@ const RETRY_DELAYS_MS = [30_000, 120_000];
 async function start(ctx) {
   if (isRunning) return;
 
+  // The one place the switch is read: at runtime start (initialize.js) and on every change of a setting
+  // polling depends on (on-settings-changed.js → restart).
+  if (!(await ctx.settings.get('telegram.enablePolling'))) {
+    ctx.log.info('Polling not started: inbound message polling is off');
+    return;
+  }
+
   const botToken = await ctx.settings.get('telegram.botToken');
   const defaultChatId = await ctx.settings.get('telegram.defaultChatId');
 
@@ -59,6 +66,16 @@ function stop() {
 }
 
 /**
+ * Apply a settings change: stop the running poller (its token, chat id and switch were read at start) and start again
+ * from the current settings — which leaves it stopped when polling is now off or not configured.
+ * @param {object} ctx - PluginContext
+ */
+async function restart(ctx) {
+  stop();
+  await start(ctx);
+}
+
+/**
  * Main polling loop.
  * @param {object} ctx - PluginContext
  * @param {string} botToken - Telegram bot token
@@ -71,11 +88,13 @@ async function pollLoop(ctx, botToken, offset, signal) {
 
   while (!signal.aborted) {
     try {
+      // The signal ends the 30 s long poll at once on stop(), so a restart does not leave this request open beside the
+      // new loop's (Telegram answers the older of two concurrent getUpdates with 409).
       const data = await telegramApi(botToken, 'getUpdates', {
         offset: currentOffset,
         timeout: 30,
         allowed_updates: ['message', 'callback_query'],
-      });
+      }, { signal });
 
       backoffMs = 1000;
 
@@ -333,4 +352,4 @@ function sleep(ms, signal) {
 
 // handleUpdate/handleCallbackQuery (inbound routing) and processUpdates (retry ledger)
 // exported for unit testing only — start/stop remain the real public API.
-module.exports = { start, stop, handleUpdate, handleCallbackQuery, processUpdates };
+module.exports = { start, stop, restart, handleUpdate, handleCallbackQuery, processUpdates };

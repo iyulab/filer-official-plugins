@@ -149,7 +149,8 @@
       "onFileChangeNotify": "./hooks/on-file-change-notify.js",
       "onSessionMessage": "./hooks/on-session-message.js",
       "onAgentHitlRequest": "./hooks/on-agent-hitl.js",
-      "onChannelChanged": "./hooks/on-channel-changed.js"
+      "onChannelChanged": "./hooks/on-channel-changed.js",
+      "onPluginSettingsChanged": "./hooks/on-settings-changed.js"
     }
   }
 }

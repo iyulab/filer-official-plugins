@@ -14,6 +14,9 @@ const { createCoalescingGuard } = require('./coalescing-guard.js');
 
 let client = null;
 let isRunning = false;
+// Which start() a connection loop belongs to. stop() moves it on, so a loop from before a restart ends at its next check
+// instead of reconnecting beside the new one (isRunning alone is true again by then).
+let session = 0;
 
 const CURSOR_KEY = 'email.imapCursor';
 // Per-message delivery attempts, `{ [uid]: attempts }`, persisted so a restart does not
@@ -62,7 +65,7 @@ async function start(ctx) {
   await reverseIndex.build(ctx);
 
   isRunning = true;
-  runLoop(ctx, { host, port, user, pass }, 1000);
+  runLoop(ctx, { host, port, user, pass }, 1000, ++session);
 }
 
 /**
@@ -70,11 +73,22 @@ async function start(ctx) {
  */
 function stop() {
   isRunning = false;
+  session++;
   clearRetryTimer();
   if (client) {
     client.logout().catch(() => {});
     client = null;
   }
+}
+
+/**
+ * Apply a settings change: stop the listener (its switch and credentials were read at start) and start again from the
+ * current settings — which leaves it stopped when inbound mail is now off or the credentials are incomplete.
+ * @param {object} ctx - PluginContext
+ */
+async function restart(ctx) {
+  stop();
+  await start(ctx);
 }
 
 /**
@@ -84,64 +98,66 @@ function stop() {
  * @param {object} ctx - PluginContext
  * @param {{host:string, port:number, user:string, pass:string}} creds
  * @param {number} backoffMs
+ * @param {number} gen - the session this loop belongs to
  */
-async function runLoop(ctx, creds, backoffMs) {
-  if (!isRunning) return;
+async function runLoop(ctx, creds, backoffMs, gen) {
+  const live = () => isRunning && gen === session;
+  if (!live()) return;
 
   let cursorPrimed = false;
   const connectedAt = Date.now();
 
-  client = new ImapFlow({
+  const conn = new ImapFlow({
     host: creds.host,
     port: creds.port,
     secure: true,
     auth: { user: creds.user, pass: creds.pass },
     logger: false,
   });
+  client = conn;
 
-  client.on('error', (err) => {
+  conn.on('error', (err) => {
     ctx.log.warn('IMAP connection error:', err.message);
   });
 
-  client.on('exists', () => {
+  conn.on('exists', () => {
     // Guard against the connect -> mailboxOpen -> primeCursor window: the
     // server can fire 'exists' before the UID cursor for *this* session has
     // been validated against the mailbox's current UIDVALIDITY, which would
     // otherwise let fetchNewMessages() run against a stale cursor from a
     // previous session — defeating the invariant primeCursor()/
     // resolveCursor() exist to protect.
-    if (!isRunning || !cursorPrimed) return;
+    if (!live() || !cursorPrimed) return;
     scheduleFetch(ctx).catch((err) => {
       ctx.log.error('Failed to fetch new IMAP messages:', err.message);
     });
   });
 
   try {
-    await client.connect();
+    await conn.connect();
 
-    if (!isRunning) {
+    if (!live()) {
       // stop() raced this in-flight connect — tear down and do not proceed
       // into mailboxOpen/primeCursor/idle.
-      client.logout().catch(() => {});
+      conn.logout().catch(() => {});
       return;
     }
 
     ctx.log.info('IMAP inbound listener connected');
 
-    const mailbox = await client.mailboxOpen('INBOX');
+    const mailbox = await conn.mailboxOpen('INBOX');
     await primeCursor(ctx, mailbox);
     cursorPrimed = true;
     await scheduleFetch(ctx); // drain anything that arrived before we connected
 
-    await new Promise((resolve) => client.on('close', resolve));
+    await new Promise((resolve) => conn.on('close', resolve));
 
     // A retry timer belongs to the session that scheduled it: the reconnect below re-primes
     // the cursor and drains from it, which re-yields any message still owed, so the timer
     // must not fire into the connect → primeCursor window against a not-yet-validated cursor
     // (the same hazard the 'exists' guard above protects against).
+    if (!live()) return;
     clearRetryTimer();
-
-    if (!isRunning) return;
 
     // imapflow's own error handling (emitError() -> closeAfter()) routes
     // essentially every real-world disconnect — dropped connections, server
@@ -157,8 +173,9 @@ async function runLoop(ctx, creds, backoffMs) {
     const nextBackoff = stayedUpMs > 60_000 ? 1000 : Math.min(backoffMs * 2, 60_000);
     ctx.log.warn('IMAP connection closed, reconnecting');
     await sleep(nextBackoff);
-    return runLoop(ctx, creds, nextBackoff);
+    return runLoop(ctx, creds, nextBackoff, gen);
   } catch (err) {
+    if (!live()) return;
     clearRetryTimer();
     if (isAuthFailure(err)) {
       ctx.log.error('IMAP authentication failed — stopping, check credentials.');
@@ -167,10 +184,9 @@ async function runLoop(ctx, creds, backoffMs) {
       return;
     }
 
-    if (!isRunning) return;
     ctx.log.warn(`IMAP connection lost, retrying in ${backoffMs}ms:`, err.message);
     await sleep(backoffMs);
-    return runLoop(ctx, creds, Math.min(backoffMs * 2, 60_000));
+    return runLoop(ctx, creds, Math.min(backoffMs * 2, 60_000), gen);
   }
 }
 
@@ -519,6 +535,7 @@ function sleep(ms) {
 module.exports = {
   start,
   stop,
+  restart,
   handleMessage,
   fetchNewMessages,
   primeCursor,
