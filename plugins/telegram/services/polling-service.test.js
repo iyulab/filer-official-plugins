@@ -69,6 +69,23 @@ test('handleUpdate routes a default-chat message through ctx.triggerInbound with
   });
 });
 
+test('handleUpdate sends who wrote the message as the sender', async () => {
+  const ctx = makeCtx();
+  await reverseIndex.build(ctx);
+
+  await handleUpdate(ctx, 'fake-token', {
+    update_id: 1000,
+    message: { chat: { id: 'chat-42' }, from: { first_name: 'Mina', last_name: 'Park', username: 'minap' }, text: 'hi' },
+  });
+  await handleUpdate(ctx, 'fake-token', {
+    update_id: 1001,
+    message: { chat: { id: 'chat-42' }, from: { first_name: 'Jun' }, text: 'hello' },
+  });
+
+  assert.equal(ctx.calls.triggerInbound[0].sender, 'Mina Park (@minap)');
+  assert.equal(ctx.calls.triggerInbound[1].sender, 'Jun');
+});
+
 test('handleUpdate drops a message from an unmapped chat without calling triggerInbound or fetch', async () => {
   const ctx = makeCtx();
   await reverseIndex.build(ctx);

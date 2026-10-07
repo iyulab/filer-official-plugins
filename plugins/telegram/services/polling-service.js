@@ -194,6 +194,17 @@ async function processUpdates(ctx, botToken, updates, offset) {
  * @param {string} botToken - Telegram bot token
  * @param {object} update - Update object from Telegram API
  */
+/**
+ * A Telegram user as people see them: "First Last (@username)", or whichever part the account has.
+ * @param {{first_name?: string, last_name?: string, username?: string} | undefined} from
+ */
+function formatSender(from) {
+  const name = [from?.first_name, from?.last_name].filter((p) => typeof p === 'string' && p.trim()).join(' ').trim();
+  const handle = typeof from?.username === 'string' && from.username.trim() ? `@${from.username.trim()}` : '';
+  if (name && handle) return `${name} (${handle})`;
+  return name || handle;
+}
+
 async function handleUpdate(ctx, botToken, update) {
   if (update.callback_query) {
     await handleCallbackQuery(ctx, botToken, update.callback_query);
@@ -226,6 +237,8 @@ async function handleUpdate(ctx, botToken, update) {
   // ctx.triggerInbound, not ctx.fetch — this always targets the host's own
   // localhost origin, which ctx.fetch's SSRF deny-list unconditionally blocks.
   const messageId = `telegram-${update.update_id}`;
+  // Who wrote it, as Telegram shows them — in a group several people share one channel. Never logged.
+  const sender = formatSender(message.from);
 
   let resp;
   try {
@@ -234,6 +247,7 @@ async function handleUpdate(ctx, botToken, update) {
       sourcePlugin: 'telegram',
       messageId,
       content: text,
+      ...(sender ? { sender } : {}),
     });
   } catch (err) {
     // The host is unreachable (typically: not up yet after a boot, or restarting). Transient
