@@ -57,7 +57,27 @@ test('handleMessage routes an allowlisted sender through ctx.triggerInbound with
     sourcePlugin: 'email',
     messageId: 'msg-42',
     content: 'What is the total amount in invoice-aug.csv?',
+    sender: 'sender@example.com',
   });
+});
+
+test('handleMessage sends who the mail is from and its subject as their own fields', async () => {
+  const ctx = makeCtx();
+  await reverseIndex.build(ctx);
+  _setClientForTesting(makeFakeClient('Could you review contract v3 by Friday?'));
+
+  await handleMessage(ctx, {
+    uid: 44,
+    envelope: {
+      from: [{ name: 'Mina Park', address: 'sender@example.com' }],
+      subject: '  Contract v3 review by Friday ',
+      messageId: 'msg-44',
+    },
+  });
+
+  assert.equal(ctx.calls.triggerInbound.length, 1);
+  assert.equal(ctx.calls.triggerInbound[0].sender, 'Mina Park <sender@example.com>');
+  assert.equal(ctx.calls.triggerInbound[0].subject, 'Contract v3 review by Friday');
 });
 
 test('handleMessage drops a message from a sender not on the allowlist without calling triggerInbound or fetch', async () => {

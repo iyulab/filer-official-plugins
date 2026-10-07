@@ -400,6 +400,17 @@ async function downloadAttachment(ctx, uid, attachment) {
  * @param {object} ctx - PluginContext
  * @param {{uid:number, envelope:object, bodyStructure:object}} message
  */
+/**
+ * An envelope address as a person reads it: `Name <address>`, or the address alone when the mail names no one.
+ * @param {{name?: string, address?: string} | undefined} from
+ */
+function formatSender(from) {
+  const address = typeof from?.address === 'string' ? from.address.trim() : '';
+  const name = typeof from?.name === 'string' ? from.name.trim() : '';
+  if (!address) return name;
+  return name && name !== address ? `${name} <${address}>` : address;
+}
+
 async function handleMessage(ctx, message) {
   const fromAddress = message.envelope?.from?.[0]?.address;
   const channelId = reverseIndex.resolve(fromAddress);
@@ -443,6 +454,10 @@ async function handleMessage(ctx, message) {
   );
 
   const messageId = message.envelope?.messageId || `email-${message.uid}`;
+  // Who it is from and its subject travel as their own fields: the run reads them as a "From:" and a "Subject:" line.
+  // Without them it saw only the body and had to guess (or invent) both. Never logged — see the line above.
+  const sender = formatSender(message.envelope?.from?.[0]);
+  const subject = typeof message.envelope?.subject === 'string' ? message.envelope.subject.trim() : '';
 
   // Route through the unified /api/triggers/inbound
   // endpoint, same as telegram/services/polling-service.js.
@@ -456,6 +471,8 @@ async function handleMessage(ctx, message) {
       sourcePlugin: 'email',
       messageId,
       content,
+      ...(sender ? { sender } : {}),
+      ...(subject ? { subject } : {}),
       ...(resolvedAttachments.length > 0
         ? {
             attachments: resolvedAttachments.map(a => ({
