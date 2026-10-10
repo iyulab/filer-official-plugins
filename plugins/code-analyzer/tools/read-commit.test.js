@@ -144,3 +144,51 @@ test('read_commit never runs git for a folder the context refuses to list', asyn
     assert.equal(result.diff, undefined);
   });
 });
+
+// The host's path denylist, as ctx.fs.isDenied answers it (the runtime asks the real list; this fake names the shape).
+function denylistCtx() {
+  return {
+    fs: {
+      list: async (dir) => fs.promises.readdir(dir),
+      isDenied: async (p) => /(^|[\\/])\.env(\.[^\\/]*)?$/.test(p) || /[\\/]id_rsa[^\\/]*$/.test(p),
+    },
+  };
+}
+
+test('read_commit leaves a committed secret-like file out of the files, the counts and the diff', async () => {
+  await withRepo(async (repo) => {
+    commit(repo, 'base', { 'a.js': 'one\n' });
+    const hash = commit(repo, 'oops: commit the env', {
+      'a.js': 'two\n',
+      '.env': 'API_TOKEN=CANARY-SECRET-1\n',
+      'keys/id_rsa': 'CANARY-SECRET-2\n',
+    });
+    const r = await handler({ folderPath: repo, hash }, denylistCtx());
+    assert.equal(r.success, true);
+    assert.deepEqual(r.files.map((f) => f.path), ['a.js']);
+    assert.equal(r.fileCount, 1);
+    assert.equal(r.withheldFiles, 2);
+    assert.doesNotMatch(r.diff, /CANARY-SECRET|\.env|id_rsa/);
+    assert.match(r.diff, /\+two/);
+  });
+});
+
+test('read_commit withholds nothing on a host that cannot answer the denylist question (no ctx.fs.isDenied)', async () => {
+  await withRepo(async (repo) => {
+    commit(repo, 'base', { 'a.js': 'one\n' });
+    const hash = commit(repo, 'add env', { '.env': 'X=1\n' });
+    const r = await handler({ folderPath: repo, hash }, fsCtx());
+    assert.equal(r.success, true);
+    assert.deepEqual(r.files.map((f) => f.path), ['.env']);
+    assert.equal(r.withheldFiles, undefined);
+  });
+});
+
+test('read_commit reports a non-ASCII path as itself', async () => {
+  await withRepo(async (repo) => {
+    commit(repo, 'base', { 'a.js': 'one\n' });
+    const hash = commit(repo, 'add notes', { '메모.md': 'hello\n' });
+    const r = await handler({ folderPath: repo, hash }, denylistCtx());
+    assert.deepEqual(r.files.map((f) => f.path), ['메모.md']);
+  });
+});

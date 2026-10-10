@@ -42,6 +42,17 @@ function parseNumstat(stdout) {
   return byPath;
 }
 
+/** The repository-relative paths among `paths` that the host's denylist refuses; none when the host cannot be asked. */
+async function deniedPaths(ctx, folderPath, paths) {
+  if (paths.length === 0 || typeof ctx.fs?.isDenied !== 'function') return [];
+  const top = (await runGit(['rev-parse', '--show-toplevel'], folderPath)).trim();
+  const denied = [];
+  for (const p of paths) {
+    if (await ctx.fs.isDenied(`${top}/${p}`)) denied.push(p);
+  }
+  return denied;
+}
+
 module.exports = async function handler(params, ctx) {
   const folderPath = params.folderPath;
   if (!folderPath) return { success: false, error: 'folderPath is required' };
@@ -58,14 +69,22 @@ module.exports = async function handler(params, ctx) {
     const [commit] = parseLog(meta);
     if (!commit) return { success: false, error: 'git returned no commit for that hash.', reason: 'unknown-revision', folderPath, hash };
 
-    const [nameStatus, numstat, patch] = await Promise.all([
-      runGit(['show', '--format=', '--name-status', '--no-renames', hash, '--', '.'], folderPath),
-      runGit(['show', '--format=', '--numstat', '--no-renames', hash, '--', '.'], folderPath),
-      runGit(['show', '--format=', '--patch', '--no-color', hash, '--', '.'], folderPath),
+    // Paths unquoted (`core.quotepath=false`): a non-ASCII name is reported as itself, and the exclusions below match it.
+    const show = (...args) => runGit(['-c', 'core.quotepath=false', 'show', '--format=', ...args], folderPath);
+    const changed = parseNameStatus(await show('--name-status', '--no-renames', hash, '--', '.'));
+
+    // A file the host's path denylist refuses (a committed `.env`, a key) is left out of the commit as the model sees it —
+    // its name, its line counts and its diff — exactly as `ctx.fs` would refuse to read it. Git, not `ctx.fs`, reads these
+    // bytes, so the tool asks the question itself. A host too old to answer it (no `ctx.fs.isDenied`) withholds nothing.
+    const withheld = await deniedPaths(ctx, folderPath, changed.map((f) => f.path));
+    const excludes = withheld.map((p) => `:(top,exclude,literal)${p}`);
+    const [numstat, patch] = await Promise.all([
+      show('--numstat', '--no-renames', hash, '--', '.', ...excludes),
+      show('--patch', '--no-color', hash, '--', '.', ...excludes),
     ]);
 
     const stats = parseNumstat(numstat);
-    const files = parseNameStatus(nameStatus).map((f) => ({
+    const files = changed.filter((f) => !withheld.includes(f.path)).map((f) => ({
       ...f,
       insertions: stats.get(f.path)?.insertions ?? null,
       deletions: stats.get(f.path)?.deletions ?? null,
@@ -83,6 +102,7 @@ module.exports = async function handler(params, ctx) {
       body: commit.body,
       files,
       fileCount: files.length,
+      ...(withheld.length > 0 ? { withheldFiles: withheld.length, withheldReason: 'secret-like files are never read' } : {}),
       diff: truncated ? patch.slice(0, maxDiffChars) : patch,
       diffChars: patch.length,
       truncated,
