@@ -145,7 +145,13 @@ function withHostBrowser(ctx, launched) {
   }
 }
 
-test('drives the browser the host starts when the host offers one', needsEdge, async () => {
+// Edge opens a DevTools endpoint only under the account's own profile: with USERPROFILE moved (an isolated test home) it
+// refuses remote debugging, which is the host's to report, not this check's.
+const underAccountProfile = (process.env.USERPROFILE ?? '').toLowerCase() === os.userInfo().homedir.toLowerCase()
+const needsHostBrowser = !edgeAvailable() ? needsEdge
+  : underAccountProfile ? {} : { skip: 'USERPROFILE is not the account profile — Edge refuses remote debugging there' }
+
+test('drives the browser the host starts when the host offers one', needsHostBrowser, async () => {
   await withApp({
     'index.html': '<!doctype html><title>Meetings</title><script src="app.js"></script><body><ul id="list"></ul></body>',
     'app.js': 'document.addEventListener("DOMContentLoaded", () => { document.getElementById("list").innerHTML = "<li>2 meetings</li>"; setTimeout(() => { undefined.x }, 50) })',
