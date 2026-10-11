@@ -41,8 +41,15 @@ function isNotFound(e) {
   return e.code === 'ENOENT' || /ENOENT|no such file/i.test(e.message)
 }
 
-async function launchEdge(chromium) {
+// Filer starts the browser for the plugin (`ctx.browser`, declared as `permissions.browser`) and the check connects to it:
+// plugin code itself may not start processes. A host older than that (no `ctx.browser`, before 2026-10-11) is driven the
+// old way — Playwright starts Edge itself; every installed Filer fetches this plugin at the repository's HEAD.
+async function launchEdge(chromium, ctx) {
   try {
+    if (typeof ctx.browser?.launch === 'function') {
+      const { wsEndpoint } = await ctx.browser.launch()
+      return await chromium.connectOverCDP(wsEndpoint)
+    }
     return await chromium.launch({ channel: 'msedge', headless: true })
   } catch (e) {
     const err = new Error(
@@ -376,7 +383,7 @@ module.exports = async function handler(params, ctx) {
   const { chromium } = require('playwright-core')
   let browser
   try {
-    browser = await launchEdge(chromium)
+    browser = await launchEdge(chromium, ctx)
   } catch (e) {
     return { success: false, error: e.message }
   }

@@ -113,3 +113,58 @@ test('a file the page asks for that does not exist is reported as missing, not a
     assert.deepEqual(r.blocked, [])
   })
 })
+
+// A host that starts the browser for the plugin (ctx.browser): Edge with a DevTools endpoint, as the runtime starts it, and
+// the check connects to it instead of starting one.
+function withHostBrowser(ctx, launched) {
+  const { spawn } = require('node:child_process')
+  return {
+    ...ctx,
+    browser: {
+      launch: async () => {
+        const exe = [process.env['ProgramFiles(x86)'], process.env.ProgramFiles]
+          .filter(Boolean)
+          .map((root) => path.join(root, 'Microsoft', 'Edge', 'Application', 'msedge.exe'))
+          .find((p) => fs.existsSync(p))
+        const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'web-app-check-host-browser-'))
+        // --do-not-de-elevate: from an elevated shell Edge would relaunch itself de-elevated and its first process exit, leaving
+        // a browser this test cannot end by its process tree.
+        const child = spawn(exe, ['--headless', '--do-not-de-elevate', '--no-first-run', `--user-data-dir=${profile}`, '--remote-debugging-port=0', 'about:blank'], { stdio: 'ignore' })
+        launched.push({ child, profile })
+        const portFile = path.join(profile, 'DevToolsActivePort')
+        for (let i = 0; i < 200; i++) {
+          if (fs.existsSync(portFile)) {
+            const [port, target] = fs.readFileSync(portFile, 'utf8').split(/\r?\n/)
+            if (target) return { wsEndpoint: `ws://127.0.0.1:${port}${target}` }
+          }
+          await new Promise((r) => setTimeout(r, 50))
+        }
+        throw new Error('the test browser did not open its endpoint')
+      },
+    },
+  }
+}
+
+test('drives the browser the host starts when the host offers one', needsEdge, async () => {
+  await withApp({
+    'index.html': '<!doctype html><title>Meetings</title><script src="app.js"></script><body><ul id="list"></ul></body>',
+    'app.js': 'document.addEventListener("DOMContentLoaded", () => { document.getElementById("list").innerHTML = "<li>2 meetings</li>"; setTimeout(() => { undefined.x }, 50) })',
+  }, async (app) => {
+    const launched = []
+    try {
+      const r = await handler({ appDir: app }, withHostBrowser(ctxFor(app), launched))
+      assert.equal(launched.length, 1, 'the check asked the host for its browser')
+      assert.equal(r.success, true, r.error)
+      assert.equal(r.title, 'Meetings')
+      assert.match(r.text, /2 meetings/)
+      assert.equal(r.pageErrors.length, 1)
+    } finally {
+      for (const b of launched) {
+        // Edge's helper processes outlive a kill of the main one and hold the profile: end the tree, as the runtime does.
+        require('node:child_process').spawnSync('taskkill', ['/PID', String(b.child.pid), '/T', '/F'], { stdio: 'ignore' })
+        // The killed processes let go of the profile a moment later.
+        await fs.promises.rm(b.profile, { recursive: true, force: true, maxRetries: 30, retryDelay: 200 })
+      }
+    }
+  })
+})
