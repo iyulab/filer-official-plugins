@@ -22,8 +22,41 @@ class GitError extends Error {
   }
 }
 
-/** The one call site that spawns git. Rejects with a GitError the tools turn into `{ success: false }`. */
-function runGit(args, cwd) {
+const GIT_ENV = { GIT_TERMINAL_PROMPT: '0', LC_ALL: 'C' };
+
+const NOT_INSTALLED = 'git is not available on this machine — install Git and make sure it is on PATH.';
+
+/** git's own failure text, sorted into the kinds the tools report. */
+function classify(stderr, fallback) {
+  const detail = String(stderr || fallback || '').trim();
+  if (/not a git repository/i.test(detail)) {
+    return new GitError('not-a-repo', 'This folder is not inside a Git repository.');
+  }
+  if (/bad object|unknown revision|bad revision|ambiguous argument/i.test(detail)) {
+    return new GitError('unknown-revision', `git does not know that revision: ${detail.split('\n')[0]}`);
+  }
+  return new GitError('failed', `git failed: ${detail.split('\n')[0] || fallback}`);
+}
+
+/**
+ * The one call site that runs git. Rejects with a GitError the tools turn into `{ success: false }`.
+ *
+ * Filer starts git for the plugin (`ctx.exec.run`, declared in the manifest's `permissions.exec`): plugin code itself may
+ * not start processes. A host older than that (no `ctx.exec`, before 2026-10-11) runs it from here — every installed
+ * Filer fetches this plugin at the repository's HEAD.
+ */
+async function runGit(ctx, args, cwd) {
+  if (typeof ctx.exec?.run === 'function') {
+    let result;
+    try {
+      result = await ctx.exec.run('git', args, { cwd, env: GIT_ENV });
+    } catch (e) {
+      if (e && e.code === 'ENOENT') throw new GitError('not-installed', NOT_INSTALLED);
+      throw e;
+    }
+    if (result.code === 0) return result.stdout;
+    throw classify(result.stderr, `exit code ${result.code}`);
+  }
   return new Promise((resolve, reject) => {
     execFile(
       'git',
@@ -32,21 +65,12 @@ function runGit(args, cwd) {
         cwd,
         maxBuffer: MAX_BUFFER,
         windowsHide: true,
-        env: { ...process.env, GIT_TERMINAL_PROMPT: '0', LC_ALL: 'C' },
+        env: { ...process.env, ...GIT_ENV },
       },
       (err, stdout, stderr) => {
         if (!err) return resolve(stdout);
-        if (err.code === 'ENOENT') {
-          return reject(new GitError('not-installed', 'git is not available on this machine — install Git and make sure it is on PATH.'));
-        }
-        const detail = String(stderr || err.message || '').trim();
-        if (/not a git repository/i.test(detail)) {
-          return reject(new GitError('not-a-repo', 'This folder is not inside a Git repository.'));
-        }
-        if (/bad object|unknown revision|bad revision|ambiguous argument/i.test(detail)) {
-          return reject(new GitError('unknown-revision', `git does not know that revision: ${detail.split('\n')[0]}`));
-        }
-        return reject(new GitError('failed', `git failed: ${detail.split('\n')[0] || err.message}`));
+        if (err.code === 'ENOENT') return reject(new GitError('not-installed', NOT_INSTALLED));
+        return reject(classify(stderr, err.message));
       },
     );
   });

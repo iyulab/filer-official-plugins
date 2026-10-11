@@ -192,3 +192,61 @@ test('read_commit reports a non-ASCII path as itself', async () => {
     assert.deepEqual(r.files.map((f) => f.path), ['메모.md']);
   });
 });
+
+// A host that starts programs for the plugin (ctx.exec, HD-213): git goes through it, with the environment the plugin asks
+// for, and the plugin never spawns anything itself.
+function execCtx(calls) {
+  const { execFile } = require('node:child_process');
+  return {
+    fs: { list: async (dir) => fs.promises.readdir(dir), isDenied: async () => false },
+    exec: {
+      run: (program, args, options) => {
+        calls.push({ program, args, options });
+        return new Promise((resolve, reject) => {
+          execFile(program, args, { cwd: options.cwd, env: { ...process.env, ...options.env }, encoding: 'utf8' }, (err, stdout, stderr) => {
+            if (!err) return resolve({ code: 0, stdout, stderr });
+            if (typeof err.code === 'number') return resolve({ code: err.code, stdout, stderr });
+            return reject(err);
+          });
+        });
+      },
+    },
+  };
+}
+
+test('read_commit runs git through ctx.exec when the host offers it', async () => {
+  await withRepo(async (repo) => {
+    commit(repo, 'base', { 'a.js': 'one\n' });
+    const hash = commit(repo, 'two', { 'a.js': 'two\n' });
+    const calls = [];
+    const r = await handler({ folderPath: repo, hash }, execCtx(calls));
+    assert.equal(r.success, true);
+    assert.match(r.diff, /\+two/);
+    assert.ok(calls.length >= 3);
+    for (const c of calls) {
+      assert.equal(c.program, 'git');
+      assert.equal(c.options.cwd, repo);
+      assert.deepEqual(c.options.env, { GIT_TERMINAL_PROMPT: '0', LC_ALL: 'C' });
+    }
+  });
+});
+
+test('read_commit reports an unknown hash from a non-zero exit through ctx.exec', async () => {
+  await withRepo(async (repo) => {
+    commit(repo, 'base', { 'a.js': 'one\n' });
+    const r = await handler({ folderPath: repo, hash: 'deadbeef' }, execCtx([]));
+    assert.equal(r.success, false);
+    assert.equal(r.reason, 'unknown-revision');
+  });
+});
+
+test('read_commit says git is missing when the host cannot find it', async () => {
+  await withRepo(async (repo) => {
+    commit(repo, 'base', { 'a.js': 'one\n' });
+    const missing = Object.assign(new Error('spawn git ENOENT'), { code: 'ENOENT' });
+    const ctx = { fs: { list: async (dir) => fs.promises.readdir(dir) }, exec: { run: async () => { throw missing; } } };
+    const r = await handler({ folderPath: repo, hash: 'deadbeef' }, ctx);
+    assert.equal(r.success, false);
+    assert.equal(r.reason, 'not-installed');
+  });
+});

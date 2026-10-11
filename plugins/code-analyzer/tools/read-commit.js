@@ -45,7 +45,7 @@ function parseNumstat(stdout) {
 /** The repository-relative paths among `paths` that the host's denylist refuses; none when the host cannot be asked. */
 async function deniedPaths(ctx, folderPath, paths) {
   if (paths.length === 0 || typeof ctx.fs?.isDenied !== 'function') return [];
-  const top = (await runGit(['rev-parse', '--show-toplevel'], folderPath)).trim();
+  const top = (await runGit(ctx, ['rev-parse', '--show-toplevel'], folderPath)).trim();
   const denied = [];
   for (const p of paths) {
     if (await ctx.fs.isDenied(`${top}/${p}`)) denied.push(p);
@@ -65,12 +65,12 @@ module.exports = async function handler(params, ctx) {
     // The metadata call first, alone: it is the one that fails on an unknown hash, and a rejected
     // `Promise.all` would leave the other git processes running in the folder after the call
     // returned. Once the hash resolves, the three folder-scoped reads cannot fail on it.
-    const meta = await runGit(['show', '--no-patch', `--format=${LOG_FORMAT}`, hash], folderPath);
+    const meta = await runGit(ctx, ['show', '--no-patch', `--format=${LOG_FORMAT}`, hash], folderPath);
     const [commit] = parseLog(meta);
     if (!commit) return { success: false, error: 'git returned no commit for that hash.', reason: 'unknown-revision', folderPath, hash };
 
     // Paths unquoted (`core.quotepath=false`): a non-ASCII name is reported as itself, and the exclusions below match it.
-    const show = (...args) => runGit(['-c', 'core.quotepath=false', 'show', '--format=', ...args], folderPath);
+    const show = (...args) => runGit(ctx, ['-c', 'core.quotepath=false', 'show', '--format=', ...args], folderPath);
     const changed = parseNameStatus(await show('--name-status', '--no-renames', hash, '--', '.'));
 
     // A file the host's path denylist refuses (a committed `.env`, a key) is left out of the commit as the model sees it —

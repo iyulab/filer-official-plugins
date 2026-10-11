@@ -81,7 +81,7 @@
       "name": "code-analyzer",
       "source": "./plugins/code-analyzer",
       "description": "AI-powered code review: explain, find bugs, suggest refactoring, generate tests and documentation, and read the folder's Git history",
-      "version": "0.2.0",
+      "version": "0.2.2",
       "category": "code",
       "tags": ["code", "review", "bugs", "refactor", "tests", "docs", "git", "history"]
     },
@@ -137,7 +137,7 @@
       "name": "video-composer",
       "source": "./plugins/video-composer",
       "description": "Compose selected images into a captioned, animated 16:9 video (no narration)",
-      "version": "0.1.0",
+      "version": "0.3.0",
       "category": "media",
       "tags": ["video", "compose", "captions", "ken-burns", "ffmpeg"]
     },

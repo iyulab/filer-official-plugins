@@ -1,7 +1,7 @@
 {
   "name": "code-analyzer",
   "displayName": "Code Analyzer",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "AI-powered code review: explain, find bugs, suggest refactoring, generate tests and documentation, and read the folder's Git history",
   "author": { "name": "iyulab", "url": "https://github.com/iyulab" },
   "repository": "https://github.com/iyulab/filer-official-plugins",
@@ -21,7 +21,8 @@
       "list": {
         "parameter": true
       }
-    }
+    },
+    "exec": ["git"]
   },
   "contributes": {
     "tools": [
