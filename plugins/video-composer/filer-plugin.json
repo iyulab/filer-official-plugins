@@ -1,8 +1,8 @@
 {
   "name": "video-composer",
   "displayName": "Video Composer",
-  "version": "0.3.0",
-  "description": "Compose selected images into a captioned, animated 16:9 video (no narration)",
+  "version": "0.3.1",
+  "description": "Compose selected images into a captioned, animated video — 16:9 or 9:16, no narration",
   "author": { "name": "iyulab", "url": "https://github.com/iyulab" },
   "repository": "https://github.com/iyulab/filer-official-plugins",
   "license": "MIT",
