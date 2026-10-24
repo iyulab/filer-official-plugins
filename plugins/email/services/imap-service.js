@@ -11,6 +11,7 @@ const reverseIndex = require('./reverse-channel-index.js');
 const { resolveCursor, isAuthFailure } = require('./imap-cursor.js');
 const { findTextPart, findAttachmentParts, isBlockedAttachmentType, exceedsDownloadSizeCeiling } = require('./mime-body.js');
 const { createCoalescingGuard } = require('./coalescing-guard.js');
+const microsoftAuth = require('./microsoft-auth.js');
 
 let client = null;
 let isRunning = false;
@@ -51,6 +52,15 @@ async function start(ctx) {
   if (isRunning) return;
 
   const enabled = await ctx.settings.get('email.enableImapPolling');
+  // A Microsoft account reads its own mailbox with a token Filer gives for each connection — no IMAP settings to fill.
+  if (enabled && (await ctx.settings.get('email.provider')) === 'microsoft') {
+    await reverseIndex.build(ctx);
+    isRunning = true;
+    const { host, port } = microsoftAuth.MICROSOFT.imap;
+    runLoop(ctx, { host, port, microsoft: true }, 1000, ++session);
+    return;
+  }
+
   const host = await ctx.settings.get('email.imapHost');
   const user = await ctx.settings.get('email.imapUser');
   const pass = await ctx.settings.get('email.imapPassword');
@@ -107,11 +117,32 @@ async function runLoop(ctx, creds, backoffMs, gen) {
   let cursorPrimed = false;
   const connectedAt = Date.now();
 
+  // A signed-in Microsoft account: a fresh token for every connection (they last about an hour; a reconnect asks again).
+  let auth = { user: creds.user, pass: creds.pass };
+  if (creds.microsoft) {
+    try {
+      const token = await microsoftAuth.microsoftToken(ctx, 'imap');
+      auth = { user: token.user, accessToken: token.accessToken };
+    } catch (err) {
+      if (!live()) return;
+      if (microsoftAuth.needsSignIn(err)) {
+        ctx.log.error('IMAP inbound stopped: the Microsoft account needs to sign in again.');
+        ctx.toast({ type: 'error', message: 'Email: sign in with Microsoft again in Connect > Email Integration to keep receiving mail.' });
+        isRunning = false;
+        return;
+      }
+      ctx.log.warn(`Microsoft sign-in token not available, retrying in ${backoffMs}ms:`, err.message);
+      await sleep(backoffMs);
+      return runLoop(ctx, creds, Math.min(backoffMs * 2, 60_000), gen);
+    }
+    if (!live()) return;
+  }
+
   const conn = new ImapFlow({
     host: creds.host,
     port: creds.port,
     secure: true,
-    auth: { user: creds.user, pass: creds.pass },
+    auth,
     logger: false,
   });
   client = conn;

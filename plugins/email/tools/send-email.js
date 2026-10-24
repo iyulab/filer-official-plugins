@@ -1,6 +1,10 @@
+import microsoftAuth from '../services/microsoft-auth.js';
+
 export default async function(params, ctx) {
   const provider = await ctx.settings.get('email.provider') || 'smtp';
-  const fromAddress = await ctx.settings.get('email.fromAddress');
+  // A Microsoft account sends as itself: the token names the account, which is the From address unless one is set.
+  const microsoft = provider === 'microsoft' ? await microsoftAuth.microsoftToken(ctx, 'smtp') : null;
+  const fromAddress = (await ctx.settings.get('email.fromAddress')) || microsoft?.user;
   if (!fromAddress) throw new Error('From address not configured. Set it in Connect > Email Integration > Settings.');
 
   const to = params.to || await ctx.settings.get('email.defaultTo');
@@ -10,6 +14,11 @@ export default async function(params, ctx) {
   try {
     if (provider === 'resend') {
       result = await sendViaResend(params, to, fromAddress, ctx);
+    } else if (microsoft) {
+      const { host, port } = microsoftAuth.MICROSOFT.smtp;
+      result = await sendViaSmtp(params, to, fromAddress, ctx, {
+        host, port, user: microsoft.user, xoauth2: microsoftAuth.xoauth2(microsoft.user, microsoft.accessToken), provider: 'microsoft',
+      });
     } else {
       result = await sendViaSmtp(params, to, fromAddress, ctx);
     }
@@ -71,11 +80,16 @@ async function sendViaResend(params, to, from, ctx) {
   return { success: true, provider: 'resend', id: result.id };
 }
 
-async function sendViaSmtp(params, to, from, ctx) {
-  const host = await ctx.settings.get('email.smtpHost');
-  const port = await ctx.settings.get('email.smtpPort') || 587;
-  const user = await ctx.settings.get('email.smtpUser');
-  const password = await ctx.settings.get('email.smtpPassword');
+/**
+ * @param {object} [account] - a signed-in account instead of the SMTP settings: its server, user and XOAUTH2 string
+ */
+async function sendViaSmtp(params, to, from, ctx, account) {
+  const host = account?.host ?? await ctx.settings.get('email.smtpHost');
+  const port = account?.port ?? (await ctx.settings.get('email.smtpPort') || 587);
+  const user = account?.user ?? await ctx.settings.get('email.smtpUser');
+  const password = account ? undefined : await ctx.settings.get('email.smtpPassword');
+  const xoauth2 = account?.xoauth2;
+  const provider = account?.provider ?? 'smtp';
 
   if (!host) throw new Error('SMTP host not configured.');
 
@@ -83,7 +97,11 @@ async function sendViaSmtp(params, to, from, ctx) {
   const { createConnection } = await import('net');
   const tls = await import('tls');
 
-  return new Promise((resolve, reject) => {
+  return new Promise((settleOk, settleErr) => {
+    // The timeout ends with the send: a timer left running kept the process alive for 30 s after every send.
+    let timer;
+    const resolve = (value) => { clearTimeout(timer); settleOk(value); };
+    const reject = (err) => { clearTimeout(timer); settleErr(err); };
     const socket = createConnection({ host, port }, () => {
       const lines = [];
       let phase = 'greeting';
@@ -101,6 +119,10 @@ async function sendViaSmtp(params, to, from, ctx) {
             if (response.includes('STARTTLS')) {
               socket.write(`STARTTLS\r\n`);
               phase = 'starttls';
+            } else if (xoauth2) {
+              // A token is never sent over an unencrypted connection.
+              reject(new Error('The mail server did not offer an encrypted connection.'));
+              socket.end();
             } else if (user) {
               socket.write(`AUTH LOGIN\r\n`);
               phase = 'auth';
@@ -114,7 +136,7 @@ async function sendViaSmtp(params, to, from, ctx) {
             const tlsSocket = tls.connect({ socket, host, servername: host }, () => {
               tlsSocket.write(`EHLO filer\r\n`);
             });
-            tlsSocket.on('data', handleTlsData(tlsSocket, { from, to, user, password, params, ctx, resolve, reject }));
+            tlsSocket.on('data', handleTlsData(tlsSocket, { from, to, user, password, xoauth2, provider, params, ctx, resolve, reject }));
             tlsSocket.on('error', reject);
             return;
           }
@@ -157,7 +179,7 @@ async function sendViaSmtp(params, to, from, ctx) {
           case 'sent':
             socket.write(`QUIT\r\n`);
             ctx.log.info(`Email sent via SMTP to ${to}`);
-            resolve({ success: true, provider: 'smtp' });
+            resolve({ success: true, provider });
             socket.end();
             break;
         }
@@ -167,7 +189,7 @@ async function sendViaSmtp(params, to, from, ctx) {
     });
 
     socket.on('error', reject);
-    setTimeout(() => { socket.destroy(); reject(new Error('SMTP timeout')); }, 30000);
+    timer = setTimeout(() => { socket.destroy(); reject(new Error('SMTP timeout')); }, 30000);
   });
 }
 
@@ -177,7 +199,10 @@ function handleTlsData(socket, opts) {
     const response = data.toString();
     switch (phase) {
       case 'ehlo':
-        if (opts.user) {
+        if (opts.xoauth2) {
+          socket.write(`AUTH XOAUTH2 ${opts.xoauth2}\r\n`);
+          phase = 'auth-pass';
+        } else if (opts.user) {
           socket.write(`AUTH LOGIN\r\n`);
           phase = 'auth';
         } else {
@@ -224,7 +249,7 @@ function handleTlsData(socket, opts) {
       case 'sent':
         socket.write(`QUIT\r\n`);
         opts.ctx.log.info(`Email sent via SMTP to ${opts.to}`);
-        opts.resolve({ success: true, provider: 'smtp' });
+        opts.resolve({ success: true, provider: opts.provider ?? 'smtp' });
         socket.end();
         break;
     }

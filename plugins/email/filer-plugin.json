@@ -18,6 +18,9 @@
     },
     "settings": true,
     "channels": { "getIntegrationConfig": true },
+    "auth": {
+      "microsoft": ["https://outlook.office.com/IMAP.AccessAsUser.All", "https://outlook.office.com/SMTP.Send"]
+    },
     "hostTrigger": true,
     "toast": true,
     "log": true,
@@ -37,8 +40,8 @@
       "email.provider": {
         "type": "string",
         "title": "Provider",
-        "description": "Email sending method",
-        "enum": ["smtp", "resend"],
+        "description": "Email sending method. Microsoft 365 / Outlook.com signs in with your Microsoft account instead of a password.",
+        "enum": ["smtp", "resend", "microsoft"],
         "default": "smtp",
         "order": 1
       },
