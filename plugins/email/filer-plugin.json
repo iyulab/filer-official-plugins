@@ -45,30 +45,43 @@
         "default": "smtp",
         "order": 1
       },
+      "email.microsoftAccount": {
+        "type": "account",
+        "provider": "microsoft",
+        "title": "Microsoft account",
+        "description": "Sign in once; Filer sends and reads mail as this account. No password is stored.",
+        "when": { "email.provider": "microsoft" },
+        "order": 1
+      },
       "email.smtpHost": {
+        "when": { "email.provider": "smtp" },
         "type": "string",
         "title": "SMTP Host",
         "description": "SMTP server hostname (e.g. smtp.gmail.com)",
         "order": 2
       },
       "email.smtpPort": {
+        "when": { "email.provider": "smtp" },
         "type": "number",
         "title": "SMTP Port",
         "default": 587,
         "order": 3
       },
       "email.smtpUser": {
+        "when": { "email.provider": "smtp" },
         "type": "string",
         "title": "SMTP Username",
         "order": 4
       },
       "email.smtpPassword": {
+        "when": { "email.provider": "smtp" },
         "type": "string",
         "title": "SMTP Password",
         "secret": true,
         "order": 5
       },
       "email.resendApiKey": {
+        "when": { "email.provider": "resend" },
         "type": "string",
         "title": "Resend API Key",
         "description": "API key from resend.com",
@@ -76,23 +89,27 @@
         "order": 6
       },
       "email.imapHost": {
+        "when": { "email.provider": ["smtp", "resend"] },
         "type": "string",
         "title": "IMAP Host",
         "description": "IMAP server hostname for receiving mail (e.g. imap.gmail.com)",
         "order": 7
       },
       "email.imapPort": {
+        "when": { "email.provider": ["smtp", "resend"] },
         "type": "number",
         "title": "IMAP Port",
         "default": 993,
         "order": 8
       },
       "email.imapUser": {
+        "when": { "email.provider": ["smtp", "resend"] },
         "type": "string",
         "title": "IMAP Username",
         "order": 9
       },
       "email.imapPassword": {
+        "when": { "email.provider": ["smtp", "resend"] },
         "type": "string",
         "title": "IMAP Password",
         "secret": true,
