@@ -137,7 +137,7 @@
       "name": "video-composer",
       "source": "./plugins/video-composer",
       "description": "Compose selected images into a captioned, animated video — 16:9 or 9:16, no narration",
-      "version": "0.3.1",
+      "version": "0.3.2",
       "category": "media",
       "tags": ["video", "compose", "captions", "ken-burns", "ffmpeg"]
     },
