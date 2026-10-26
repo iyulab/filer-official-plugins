@@ -55,7 +55,7 @@ public sealed class RefineCommandTests : IDisposable
         var source = Write("m.vtt", Vtt);
         var model = new ScriptedModel("[0] 지금부터 마케팅 팀 주간 회의를 시작하겠습니다\n[2] [unclear]");
 
-        var result = await RefineCommand.RunAsync(model, source, Path.Combine(_dir, "m.clean.vtt"), Path.Combine(_dir, "m.changes.json"), null);
+        var result = await RefineCommand.RunAsync(model, source, Path.Combine(_dir, "m.clean.vtt"), Path.Combine(_dir, "m.changes.json"), null, TestContext.Current.CancellationToken);
 
         result.Success.Should().BeTrue();
         result.Cues.Should().Be(3);
@@ -83,7 +83,7 @@ public sealed class RefineCommandTests : IDisposable
             """);
         var model = new CapturingModel("[0] 지금부터 마케팅 팀 주간 회의를 시작하겠습니다");
 
-        var result = await RefineCommand.RunAsync(model, source, Path.Combine(_dir, "m.clean.vtt"), Path.Combine(_dir, "m.changes.json"), null);
+        var result = await RefineCommand.RunAsync(model, source, Path.Combine(_dir, "m.clean.vtt"), Path.Combine(_dir, "m.changes.json"), null, TestContext.Current.CancellationToken);
 
         result.Applied.Should().Be(1);
         var refined = File.ReadAllText(result.OutputPath);
@@ -111,7 +111,7 @@ public sealed class RefineCommandTests : IDisposable
         // Rewriting a whole cue into something else is not a mishearing fix — the SDK's gate refuses it.
         var model = new ScriptedModel("[1] 오늘 회의는 취소되었습니다 그리고 다음 주로 미룹니다");
 
-        var result = await RefineCommand.RunAsync(model, source, Path.Combine(_dir, "m.clean.vtt"), Path.Combine(_dir, "m.changes.json"), null);
+        var result = await RefineCommand.RunAsync(model, source, Path.Combine(_dir, "m.clean.vtt"), Path.Combine(_dir, "m.changes.json"), null, TestContext.Current.CancellationToken);
 
         result.Rejected.Should().Be(1);
         File.ReadAllText(result.OutputPath).Should().Contain("참석자는 김인수 팀장과 박준호 사원입니다");
@@ -126,7 +126,7 @@ public sealed class RefineCommandTests : IDisposable
         var existing = Write("m.clean.vtt", "keep me");
         var model = new ScriptedModel("");
 
-        var act = () => RefineCommand.RunAsync(model, source, existing, Path.Combine(_dir, "m.changes.json"), null);
+        var act = () => RefineCommand.RunAsync(model, source, existing, Path.Combine(_dir, "m.changes.json"), null, TestContext.Current.CancellationToken);
 
         await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("*overwrite*");
         File.ReadAllText(existing).Should().Be("keep me");
