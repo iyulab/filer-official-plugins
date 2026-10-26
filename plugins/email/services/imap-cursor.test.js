@@ -19,6 +19,23 @@ test('resolveCursor resets when uidValidity changed (mailbox recreated / UIDs re
   assert.deepEqual(result, { uidValidity: 43, lastUid: 199, reset: true });
 });
 
+test('resolveCursor records the account it was resolved for', () => {
+  assert.deepEqual(resolveCursor(null, 42, 100, 'a@example.test'), { uidValidity: 42, lastUid: 99, account: 'a@example.test', reset: false });
+  assert.deepEqual(resolveCursor({ uidValidity: 42, lastUid: 55, account: 'a@example.test' }, 42, 100, 'a@example.test'),
+    { uidValidity: 42, lastUid: 55, account: 'a@example.test', reset: false });
+});
+
+test('resolveCursor resets for another account even when uidValidity is the same', () => {
+  const stored = { uidValidity: 42, lastUid: 138886, account: 'a@example.test' };
+  const result = resolveCursor(stored, 42, 200, 'b@example.test');
+  assert.deepEqual(result, { uidValidity: 42, lastUid: 199, account: 'b@example.test', reset: true });
+});
+
+test('resolveCursor takes a cursor saved before accounts were recorded as belonging to the current account', () => {
+  const result = resolveCursor({ uidValidity: 42, lastUid: 55 }, 42, 100, 'a@example.test');
+  assert.deepEqual(result, { uidValidity: 42, lastUid: 55, account: 'a@example.test', reset: false });
+});
+
 test('isAuthFailure is true for imapflow AuthenticationFailure errors', () => {
   const err = new Error('Invalid credentials');
   err.authenticationFailed = true;

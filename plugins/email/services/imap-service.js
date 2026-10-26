@@ -177,7 +177,7 @@ async function runLoop(ctx, creds, backoffMs, gen) {
     ctx.log.info('IMAP inbound listener connected');
 
     const mailbox = await conn.mailboxOpen('INBOX');
-    await primeCursor(ctx, mailbox);
+    await primeCursor(ctx, mailbox, auth.user);
     cursorPrimed = true;
     await scheduleFetch(ctx); // drain anything that arrived before we connected
 
@@ -226,7 +226,7 @@ async function runLoop(ctx, creds, backoffMs, gen) {
  * @param {object} ctx - PluginContext
  * @param {{uidValidity:bigint, uidNext:number}} mailbox
  */
-async function primeCursor(ctx, mailbox) {
+async function primeCursor(ctx, mailbox, account) {
   const stored = await ctx.store.get(CURSOR_KEY);
   // imapflow's mailboxOpen() reports UIDVALIDITY as a BigInt (verified
   // against the installed package's lib/imap-flow.d.ts and
@@ -239,14 +239,14 @@ async function primeCursor(ctx, mailbox) {
   // every connect) and so ctx.store.set() below can JSON-serialize it
   // (JSON.stringify throws on a raw BigInt).
   const uidValidity = Number(mailbox.uidValidity);
-  const cursor = resolveCursor(stored, uidValidity, mailbox.uidNext);
+  const cursor = resolveCursor(stored, uidValidity, mailbox.uidNext, account);
   if (cursor.reset) {
-    ctx.log.warn('IMAP UIDVALIDITY changed — mailbox cursor reset');
+    ctx.log.warn('IMAP mailbox cursor reset — UIDVALIDITY changed or another account signed in');
     // The retry ledger is keyed by uid, and uids are reused after a UIDVALIDITY change — a
     // stale attempt count would give up on a fresh message early.
     await ctx.store.delete(RETRY_KEY);
   }
-  await ctx.store.set(CURSOR_KEY, { uidValidity: cursor.uidValidity, lastUid: cursor.lastUid });
+  await ctx.store.set(CURSOR_KEY, { uidValidity: cursor.uidValidity, lastUid: cursor.lastUid, ...(cursor.account === undefined ? {} : { account: cursor.account }) });
 }
 
 function clearRetryTimer() {
@@ -343,7 +343,7 @@ async function fetchNewMessages(ctx) {
   }
 
   if (lastUid !== stored.lastUid) {
-    await ctx.store.set(CURSOR_KEY, { uidValidity: stored.uidValidity, lastUid });
+    await ctx.store.set(CURSOR_KEY, { ...stored, lastUid });
   }
   if (Object.keys(retry).length > 0) {
     await ctx.store.set(RETRY_KEY, retry);
