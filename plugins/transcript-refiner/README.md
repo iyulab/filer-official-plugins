@@ -17,3 +17,9 @@ Tool: `refine_transcript(path, outputPath, changesPath, glossaryPath?)`.
    ```
 
 2. Tests: `dotnet test src/TranscriptRefiner.PluginHost.Tests`.
+
+## Checking a published host
+
+The unit tests run on the JIT with reflection enabled, so they cannot see a failure that only exists in the NativeAOT executable (for example a
+reflection-based JSON call). After re-publishing `bin/TranscriptRefiner.PluginHost.exe`, run `node --test plugins/transcript-refiner/host-smoke.test.js` from the
+repository root: it sends real requests to the published executable over its stdio protocol (Windows only; skipped elsewhere).

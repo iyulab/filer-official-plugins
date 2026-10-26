@@ -19,6 +19,8 @@ pluggability the plugin doesn't have. If that changes, this note is the place to
    ```
    dotnet publish src/VideoComposer.PluginHost -c Release -r win-x64 --self-contained -p:PublishAot=true -o bin
    ```
+   The NativeAOT link step needs `vswhere.exe` on `PATH` (it lives in `C:\Program Files (x86)\Microsoft Visual Studio\Installer`);
+   a plain Git Bash shell does not have it.
 2. Place a static ffmpeg build at `bin/ffmpeg/ffmpeg.exe`. The published
    `VideoComposer.PluginHost.exe` looks for it at
    `<its own directory>/ffmpeg/ffmpeg.exe` (see `Program.cs`'s `ffmpegBinaryFolder`).
@@ -39,3 +41,9 @@ matches the checksum above, then extract `bin/ffmpeg.exe` from it into `bin/ffmp
 here. Do not replace this file with an unverified build — a checksum mismatch means the download
 is corrupted or the upstream artifact changed, and should be treated as a blocker, not worked
 around.
+
+## Checking a published host
+
+The unit tests run on the JIT with reflection enabled, so they cannot see a failure that only exists in the NativeAOT executable (for example a
+reflection-based JSON call). After re-publishing `bin/VideoComposer.PluginHost.exe`, run `node --test plugins/video-composer/host-smoke.test.js` from the
+repository root: it sends real requests to the published executable over its stdio protocol (Windows only; skipped elsewhere).

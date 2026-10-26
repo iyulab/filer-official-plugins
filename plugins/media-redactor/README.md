@@ -51,3 +51,9 @@ win-x64 build/checksum; use the same one here unless a reason to diverge comes u
 The `bin/` output above (including the ffmpeg binary) ships **committed** to this repo, the same way
 `video-composer/bin/` does — this plugin's `filer-plugin.json` registry entry only becomes installable
 once that directory exists and is committed.
+
+## Checking a published host
+
+The unit tests run on the JIT with reflection enabled, so they cannot see a failure that only exists in the NativeAOT executable (for example a
+reflection-based JSON call). After re-publishing `bin/MediaRedactor.PluginHost.exe`, run `node --test plugins/media-redactor/host-smoke.test.js` from the
+repository root: it sends real requests to the published executable over its stdio protocol (Windows only; skipped elsewhere).
