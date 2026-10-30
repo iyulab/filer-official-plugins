@@ -345,8 +345,9 @@ function createOriginSave(appDir, ctx) {
       state.servedBack[key] = (state.servedBack[key] ?? 0) + 1
       return route.fulfill({ status: 200, contentType, headers, body: written.get(key) })
     }
+    let bytes
     try {
-      await ctx.fs.read(local)
+      bytes = await ctx.fs.read(local)
     } catch (e) {
       const name = path.relative(appDir, local) || local
       if (isNotFound(e)) {
@@ -358,7 +359,10 @@ function createOriginSave(appDir, ctx) {
       blocked.push({ url: name, reason: e.message })
       return route.abort('accessdenied')
     }
-    return route.fulfill({ status: 200, contentType, headers, path: local })
+    // The bytes ctx.fs.read already returned, not `path: local`: the plugin runs under the permission model, which grants it no
+    // read of the App's folder — only ctx.fs does — so a fulfil by path made Playwright read the file itself and die with
+    // «Access to this API has been restricted» (the page never loaded, every check timed out).
+    return route.fulfill({ status: 200, contentType, headers, body: bytes })
   }
 
   return { state, answer, urlOf }
