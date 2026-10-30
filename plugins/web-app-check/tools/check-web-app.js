@@ -12,6 +12,16 @@ const WRITE_HEAD = 300
 const TEXT_BEFORE_RELOAD = 1200
 const OTHER_FOLDER_NAME = 'Documents'
 
+// The "origin" save mode (the page saves by PUT to its own address, as it does on a Filer folder's web origin). The page is served from a
+// throwaway origin that never reaches the network: Playwright answers every request to it. The numbers and the rule mirror the host's
+// folder origin (FolderOriginHandler: header, 2 MiB, a file inside the app's own folder, no new folders) — a drift shows up as a model
+// being told "fine" here and refused there, so each is named once.
+const ORIGIN_BASE = 'http://127.0.0.1:5299'
+const PAGE_HEADER = 'x-local-origin'
+const MAX_SAVE_BYTES = 2 * 1024 * 1024
+const APP_CSP = "default-src 'self'; connect-src 'self'; img-src 'self' data: blob:; form-action 'self'; " +
+  "script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; frame-ancestors 'self'"
+
 const STEP_ACTIONS = ['click', 'fill', 'check', 'uncheck', 'select', 'reload', 'wait', 'expectText', 'expectNoText', 'expectValue']
 
 const CONTENT_TYPES = {
@@ -270,6 +280,90 @@ function createSaveFolder(mode, appDir, ctx) {
   }
 }
 
+/** The folder that holds `.filer` (so the page's own `FOLDER_ROOT` line yields it); without one, the app's parent. */
+function folderRootOf(appDir) {
+  const parts = appDir.split(path.sep)
+  const at = parts.lastIndexOf('.filer')
+  return at > 0 ? parts.slice(0, at).join(path.sep) || path.sep : path.dirname(appDir)
+}
+
+/** True for a name the host's origin would never let a page write (a second `.filer`, a secret-like file). */
+function isSecretOrManaged(rel) {
+  const segments = rel.split('/')
+  const name = segments[segments.length - 1]
+  return segments.some((s) => s.toLowerCase() === '.filer') || /^\.env/i.test(name) || /\.(pem|key)$/i.test(name)
+}
+
+/**
+ * The page's saves in "origin" mode: kept aside, never written to disk, served back to the page on every load after the write.
+ * A save the folder's origin would refuse is refused here the same way and listed with the reason.
+ */
+function createOriginSave(appDir, ctx) {
+  const root = folderRootOf(appDir)
+  const written = new Map() // key (relative to appDir) → body
+  const state = { puts: [], refused: [], servedBack: {} }
+  const keyOf = (local) => path.relative(appDir, local).replace(/\\/g, '/')
+  const urlOf = (local) => `${ORIGIN_BASE}/${path.relative(root, local).split(path.sep).map(encodeURIComponent).join('/')}`
+  const localOf = (url) => {
+    const segments = new URL(url).pathname.split('/').filter(Boolean).map(decodeURIComponent)
+    return path.join(root, ...segments)
+  }
+
+  /** Answers a request the page made to its own origin. */
+  async function answer(route, missing, blocked) {
+    const request = route.request()
+    const local = localOf(request.url())
+    const key = keyOf(local)
+    const shown = key || local
+    if (request.method() === 'PUT') {
+      const refuse = (status, reason) => {
+        state.refused.push({ file: shown, reason })
+        return route.fulfill({ status, body: '' })
+      }
+      if (request.headers()[PAGE_HEADER] !== '1') return refuse(403, 'the request has no "X-Local-Origin: 1" header, which only the page\'s own script sends')
+      if (!isInside(local, appDir) || key === '') return refuse(403, 'outside the app\'s own folder — a page may write only inside it')
+      if (isSecretOrManaged(key)) return refuse(403, 'a name a page may never write (a second .filer folder, or a secret-like file)')
+      const body = request.postDataBuffer() ?? Buffer.alloc(0)
+      if (body.length > MAX_SAVE_BYTES) return refuse(413, `${body.length} bytes is over the ${MAX_SAVE_BYTES}-byte limit of one save`)
+      if (!(await ctx.fs.exists(path.dirname(local)))) return refuse(409, 'its folder does not exist — a save does not make folders')
+      const created = !written.has(key) && !(await ctx.fs.exists(local))
+      written.set(key, body)
+      state.puts.push({ file: key, bytes: body.length, head: truncate(body.toString('utf8'), WRITE_HEAD) })
+      return route.fulfill({ status: created ? 201 : 200, contentType: 'application/json', body: JSON.stringify({ size: body.length }) })
+    }
+    if (request.method() !== 'GET' && request.method() !== 'HEAD') {
+      state.refused.push({ file: shown, reason: `${request.method()} is not answered by a folder's origin (only GET, HEAD and the save)` })
+      return route.fulfill({ status: 405, headers: { allow: 'GET, HEAD, PUT' }, body: '' })
+    }
+    if (!isInside(local, appDir)) {
+      blocked.push({ url: shown, reason: 'outside appDir' })
+      return route.abort('accessdenied')
+    }
+    const headers = { 'content-security-policy': APP_CSP, 'x-content-type-options': 'nosniff', 'cross-origin-resource-policy': 'same-origin' }
+    const contentType = CONTENT_TYPES[path.extname(local).toLowerCase()] ?? 'application/octet-stream'
+    if (written.has(key)) {
+      state.servedBack[key] = (state.servedBack[key] ?? 0) + 1
+      return route.fulfill({ status: 200, contentType, headers, body: written.get(key) })
+    }
+    try {
+      await ctx.fs.read(local)
+    } catch (e) {
+      const name = path.relative(appDir, local) || local
+      if (isNotFound(e)) {
+        ctx.log.warn(`web-app-check: the page asked for a missing file: ${name}`)
+        missing.push(name)
+        return route.fulfill({ status: 404, headers, body: '' })
+      }
+      ctx.log.warn(`web-app-check: the page asked for a file the folder rules refuse: ${e.message}`)
+      blocked.push({ url: name, reason: e.message })
+      return route.abort('accessdenied')
+    }
+    return route.fulfill({ status: 200, contentType, headers, path: local })
+  }
+
+  return { state, answer, urlOf }
+}
+
 /** Runs in the page before any of its scripts: a directory handle that speaks the File System Access API over `__filerCheckFolder`. */
 function installPicker(folderName) {
   const call = (...args) => window.__filerCheckFolder(...args)
@@ -367,8 +461,8 @@ module.exports = async function handler(params, ctx) {
   const parsed = parseSteps(params.steps)
   if (parsed.error) return { success: false, error: parsed.error }
   const saveMode = params.saveFolder
-  if (saveMode !== undefined && saveMode !== 'app' && saveMode !== 'other') {
-    return { success: false, error: 'saveFolder is "app" (the app\'s own folder) or "other" (a folder that is not the app\'s)' }
+  if (saveMode !== undefined && saveMode !== 'app' && saveMode !== 'other' && saveMode !== 'origin') {
+    return { success: false, error: 'saveFolder is "origin" (the page saves by PUT to its own address), "app" (the app\'s own folder, through the browser\'s folder picker) or "other" (a folder that is not the app\'s)' }
   }
   if (saveMode && typeof ctx.fs.exists !== 'function') {
     return { success: false, error: 'This version of Filer cannot run the save exercise (it needs a newer plugin runtime).' }
@@ -395,7 +489,8 @@ module.exports = async function handler(params, ctx) {
   const dialogs = []
   const clickResults = []
   const stepResults = []
-  const folder = saveMode ? createSaveFolder(saveMode, appDir, ctx) : null
+  const folder = saveMode === 'app' || saveMode === 'other' ? createSaveFolder(saveMode, appDir, ctx) : null
+  const origin = saveMode === 'origin' ? createOriginSave(appDir, ctx) : null
   try {
     const context = await browser.newContext({ serviceWorkers: 'block' })
     if (folder) {
@@ -405,6 +500,7 @@ module.exports = async function handler(params, ctx) {
     await context.route('**/*', async (route) => {
       const url = route.request().url()
       if (url.startsWith('data:') || url.startsWith('blob:') || url.startsWith('about:')) return route.continue()
+      if (origin && url.startsWith(`${ORIGIN_BASE}/`)) return origin.answer(route, missing, blocked)
       if (url.startsWith('file:')) {
         let local
         try {
@@ -451,7 +547,7 @@ module.exports = async function handler(params, ctx) {
       d.accept().catch((e) => ctx.log.warn(`web-app-check: a dialog could not be answered: ${e.message}`))
     })
 
-    await page.goto(pathToFileURL(pagePath).href, { waitUntil: 'load', timeout: NAV_TIMEOUT_MS })
+    await page.goto(origin ? origin.urlOf(pagePath) : pathToFileURL(pagePath).href, { waitUntil: 'load', timeout: NAV_TIMEOUT_MS })
     await page.waitForTimeout(SETTLE_MS)
     let loadedLines = await linesOf(page, ctx)
 
@@ -503,6 +599,18 @@ module.exports = async function handler(params, ctx) {
       ...(clickResults.length ? { clicks: clickResults } : {}),
       ...(stepResults.length ? { steps: stepResults, stepsFailed: stepResults.filter((s) => !s.ok).length } : {}),
       ...(dialogs.length ? { dialogs } : {}),
+      ...(origin
+        ? {
+            saveFolder: {
+              handed: 'its own address — a throwaway local origin that serves the app folder the way Filer does',
+              summary: summarizeOriginSave(origin.state),
+              puts: origin.state.puts,
+              refusedPuts: origin.state.refused,
+              servedBackToThePage: Object.entries(origin.state.servedBack).map(([file, times]) => ({ file, times })),
+              note: 'Nothing was written to disk: the page\'s saves were kept aside and served back to it on every load after the save (servedBackToThePage counts them), so after a reload step the page has its saved file exactly as it does on a Filer folder. After a reload the page\'s status line starts over — assert the saved state on the inputs (expectValue), not on a "Saved" message.',
+            },
+          }
+        : {}),
       ...(folder
         ? {
             saveFolder: {
@@ -538,6 +646,17 @@ function summarizeSave(mode, state) {
   return state.writes.length
     ? `The page was handed its folder and wrote ${state.writes.length} time(s). Whether what it wrote is right is for the steps after a reload to show.`
     : 'The page was handed its folder and wrote nothing. Look at pageErrors and at the text before the reload for what it said.'
+}
+
+/** One sentence a reader can act on, for the "origin" save mode; the lists beside it are the evidence. */
+function summarizeOriginSave(state) {
+  if (state.refused.length) {
+    const reasons = [...new Set(state.refused.map((r) => r.reason))].join('; ')
+    return `PROBLEM: ${state.refused.length} save request(s) were refused the way Filer's folder origin refuses them — ${reasons}. Fix what the page sends (see refusedPuts), then check again.`
+  }
+  if (state.puts.length === 0) return 'The page sent no save (no PUT to its own address) — no step reached a save, or the page does not save with fetch(…, { method: "PUT", headers: { "X-Local-Origin": "1" } }).'
+  const files = [...new Set(state.puts.map((p) => p.file))].join(', ')
+  return `The page saved ${state.puts.length} time(s), to: ${files}. Whether what it wrote is right is for the steps after a reload to show.`
 }
 
 module.exports.parseSteps = parseSteps

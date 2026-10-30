@@ -18,7 +18,7 @@
     "steps": {
       "type": "array",
       "maxItems": 40,
-      "description": "A script to drive the page with, in order. Each entry names exactly one action: {\"click\": selector} · {\"fill\": selector, \"value\": text} · {\"check\": selector} · {\"uncheck\": selector} · {\"select\": selector, \"value\": option} · {\"wait\": milliseconds} · {\"reload\": true} · {\"expectText\": text} · {\"expectNoText\": text} · {\"expectValue\": selector, \"value\": text} (a checkbox reads \"true\" or \"false\"). A failed step is reported and the script goes on. To check that a page saves: change something, press its connect/save control, reload, and expect the change to still be there.",
+      "description": "A script to drive the page with, in order. Each entry names exactly one action: {\"click\": selector} · {\"fill\": selector, \"value\": text} · {\"check\": selector} · {\"uncheck\": selector} · {\"select\": selector, \"value\": option} · {\"wait\": milliseconds} · {\"reload\": true} · {\"expectText\": text} · {\"expectNoText\": text} · {\"expectValue\": selector, \"value\": text} (a checkbox reads \"true\" or \"false\"). A failed step is reported and the script goes on. To check that a page saves: change something (and press its connect/save control, if it has one), reload, and expect the change to still be there.",
       "items": {
         "type": "object",
         "properties": {
@@ -38,8 +38,8 @@
     },
     "saveFolder": {
       "type": "string",
-      "enum": ["app", "other"],
-      "description": "Set this when the page saves with the browser's folder picker (showDirectoryPicker). No person is there to pick a folder, so the check hands the page one: \"app\" = the app's own folder (appDir), \"other\" = an empty folder that is not the app's, to see that the page refuses it. Nothing is written to disk — what the page writes is kept aside, listed in the report, and served back to the page, so a reload step shows what it saved."
+      "enum": ["origin", "app", "other"],
+      "description": "How the page saves. \"origin\" = the page saves by PUT to its own address (fetch('<file>', { method: 'PUT', headers: { 'X-Local-Origin': '1' }, body })), which is how an app saves on a Filer folder: the check serves the app from a throwaway local origin, keeps every save aside (nothing is written to disk), lists them (puts) and any the real origin would refuse (refusedPuts, with the reason), and serves them back so a reload step shows whether the save worked. \"app\" / \"other\" are for a page that saves with the browser's folder picker (showDirectoryPicker): there is no person to pick a folder, so the check hands the page one \u2014 \"app\" = the app's own folder, \"other\" = an empty folder that is not the app's, to see that the page refuses it."
     }
   },
   "required": ["appDir"]
