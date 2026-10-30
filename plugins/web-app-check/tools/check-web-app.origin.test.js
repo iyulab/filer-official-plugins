@@ -166,3 +166,13 @@ test('origin: an unknown saveFolder value is refused with the three that exist',
   assert.equal(result.success, false)
   assert.match(result.error, /"origin".*"app".*"other"/)
 })
+
+// The plugin runs in a Node process under the permission model (src/ui/src/plugin-runtime/plugin-child-host.ts: reads of the plugin's
+// folder, the bundle and its temp folder only). The App's folder is reachable through ctx.fs and nothing else, so a response built
+// with `route.fulfill({ path })` — Playwright reading the file itself — is denied there and every page check times out. The tests above
+// run outside that model and cannot see it; this pins the one way to hold the line: a file is served from the bytes ctx.fs.read gave.
+test('the origin mode serves a file from the bytes ctx.fs.read returned, never by handing Playwright a path', () => {
+  const source = fs.readFileSync(path.join(__dirname, 'check-web-app.js'), 'utf8')
+  assert.doesNotMatch(source, /fulfill\(\{[^}]*\bpath:/, 'a fulfil by path is a direct read the plugin child is not granted')
+  assert.match(source, /route\.fulfill\(\{ status: 200, contentType, headers, body: bytes \}\)/)
+})
