@@ -33,7 +33,7 @@
       "name": "email",
       "source": "./plugins/email",
       "description": "Send emails via SMTP or API providers",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "category": "messaging",
       "tags": ["email", "notification"]
     },

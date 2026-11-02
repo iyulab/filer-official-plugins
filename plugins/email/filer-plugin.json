@@ -1,7 +1,7 @@
 {
   "name": "email",
   "displayName": "Email Integration",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Send emails via SMTP or API providers",
   "author": { "name": "iyulab", "url": "https://github.com/iyulab" },
   "repository": "https://github.com/iyulab/filer-official-plugins",
@@ -9,7 +9,7 @@
   "license": "MIT",
   "keywords": ["email", "smtp", "notification"],
   "runtime": "node",
-  "engines": { "filer": ">=0.2.0" },
+  "engines": { "filer": ">=0.21.0" },
   "bundled": false,
   "capabilities": ["messenger", "inbound-channel"],
   "permissions": {
