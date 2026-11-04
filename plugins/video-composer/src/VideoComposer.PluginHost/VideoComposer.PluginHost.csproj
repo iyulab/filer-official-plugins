@@ -10,7 +10,6 @@
     <InvariantGlobalization>true</InvariantGlobalization>
     <AssemblyName>VideoComposer.PluginHost</AssemblyName>
     <DebugType>None</DebugType>
-    <RestoreAdditionalProjectSources Condition="Exists('D:\local-nuget-packages')">D:\local-nuget-packages</RestoreAdditionalProjectSources>
     <FilerPluginHostAiClient>true</FilerPluginHostAiClient>
     <FilerPluginHostJobObject>true</FilerPluginHostJobObject>
   </PropertyGroup>

@@ -8,7 +8,6 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <IsPackable>false</IsPackable>
-    <RestoreAdditionalProjectSources Condition="Exists('D:\local-nuget-packages')">D:\local-nuget-packages</RestoreAdditionalProjectSources>
   </PropertyGroup>
 
   <ItemGroup>
