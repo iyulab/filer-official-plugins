@@ -62,6 +62,15 @@ module.exports = async function handler(params, ctx) {
         break
     }
   } catch (e) {
+    // The PDF is printed by Microsoft Edge in the runtime; where it has none (macOS, a Windows without Edge) the runtime says
+    // «not available in this host». Say what that means for the person, and what still works.
+    if (targetFormat === 'pdf' && /not available in this host/.test(e.message)) {
+      return {
+        success: false,
+        error: 'PDF output is not available on this computer: it needs Microsoft Edge, which Filer uses to print the page. ' +
+          'HTML, Markdown and plain text work here.',
+      }
+    }
     return { success: false, error: `Failed to produce ${targetFormat} output: ${e.message}` }
   }
 

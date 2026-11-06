@@ -173,6 +173,23 @@ test('convert_document converts plain text to pdf', async () => {
   })
 })
 
+test('convert_document says plainly that PDF is unavailable where the runtime has no PDF renderer, and names what works', async () => {
+  await withTempDir(async (dir) => {
+    const sourcePath = path.join(dir, 'sample.txt')
+    fs.writeFileSync(sourcePath, 'just some text')
+    const outputPath = path.join(dir, 'sample.pdf')
+    const ctx = fsCtx({ renderHtmlToPdf: async () => { throw new Error('renderHtmlToPdf is not available in this host') } })
+
+    const result = await handler({ path: sourcePath, targetFormat: 'pdf', outputPath }, ctx)
+
+    assert.equal(result.success, false)
+    assert.match(result.error, /PDF output is not available on this computer/)
+    assert.match(result.error, /HTML, Markdown and plain text work here/)
+    assert.doesNotMatch(result.error, /renderHtmlToPdf|host/)
+    assert.equal(fs.existsSync(outputPath), false)
+  })
+})
+
 test('convert_document refuses to overwrite an existing output file', async () => {
   await withTempDir(async (dir) => {
     const sourcePath = path.join(dir, 'sample.md')

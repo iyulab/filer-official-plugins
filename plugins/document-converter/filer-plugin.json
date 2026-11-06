@@ -1,7 +1,7 @@
 {
   "name": "document-converter",
   "displayName": "Document Converter",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Convert Word documents, Markdown, HTML, and plain text to PDF, HTML, Markdown, or plain text",
   "author": { "name": "iyulab", "url": "https://github.com/iyulab" },
   "repository": "https://github.com/iyulab/filer-official-plugins",
