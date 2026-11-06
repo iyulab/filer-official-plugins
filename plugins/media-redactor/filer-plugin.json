@@ -1,7 +1,7 @@
 {
   "name": "media-redactor",
   "displayName": "Media Redactor",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Pixelate a region of an image or video to hide sensitive info before sharing it",
   "author": { "name": "iyulab", "url": "https://github.com/iyulab" },
   "repository": "https://github.com/iyulab/filer-official-plugins",
@@ -9,8 +9,8 @@
   "keywords": ["redact", "blur", "pixelate", "privacy", "image", "video", "ffmpeg"],
   "category": "media",
   "runtime": "process",
-  "command": "./bin/MediaRedactor.PluginHost.exe",
-  "engines": { "filer": ">=0.5.0" },
+  "platforms": { "win32": { "command": "./bin/MediaRedactor.PluginHost.exe" } },
+  "engines": { "filer": ">=0.21.0" },
   "bundled": false,
   "capabilities": ["redact-media"],
   "permissions": {

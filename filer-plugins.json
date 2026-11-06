@@ -137,7 +137,7 @@
       "name": "video-composer",
       "source": "./plugins/video-composer",
       "description": "Compose selected images into a captioned, animated video — 16:9 or 9:16, no narration",
-      "version": "0.3.2",
+      "version": "0.3.3",
       "category": "media",
       "tags": ["video", "compose", "captions", "ken-burns", "ffmpeg"]
     },
@@ -145,7 +145,7 @@
       "name": "media-redactor",
       "source": "./plugins/media-redactor",
       "description": "Pixelate a region of an image or video to hide sensitive info before sharing it",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "category": "media",
       "tags": ["redact", "blur", "pixelate", "privacy", "image", "video", "ffmpeg"]
     },
@@ -161,7 +161,7 @@
       "name": "transcript-refiner",
       "source": "./plugins/transcript-refiner",
       "description": "Fix what speech-to-text misheard in a transcript, keeping every segment and timing",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "category": "media",
       "tags": ["transcript", "vtt", "speech-to-text", "correction"]
     }

@@ -1,7 +1,7 @@
 {
   "name": "transcript-refiner",
   "displayName": "Transcript Refiner",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Fix what speech-to-text misheard in a transcript (.vtt) with your own model — every segment and timing kept, every change listed",
   "author": {
     "name": "iyulab",
@@ -19,9 +19,9 @@
   ],
   "category": "media",
   "runtime": "process",
-  "command": "./bin/TranscriptRefiner.PluginHost.exe",
+  "platforms": { "win32": { "command": "./bin/TranscriptRefiner.PluginHost.exe" } },
   "engines": {
-    "filer": ">=0.5.0"
+    "filer": ">=0.21.0"
   },
   "bundled": false,
   "capabilities": [

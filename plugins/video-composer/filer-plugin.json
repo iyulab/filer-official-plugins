@@ -1,7 +1,7 @@
 {
   "name": "video-composer",
   "displayName": "Video Composer",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "Compose selected images into a captioned, animated video — 16:9 or 9:16, no narration",
   "author": { "name": "iyulab", "url": "https://github.com/iyulab" },
   "repository": "https://github.com/iyulab/filer-official-plugins",
@@ -9,8 +9,8 @@
   "keywords": ["video", "compose", "captions", "ken-burns", "ffmpeg"],
   "category": "media",
   "runtime": "process",
-  "command": "./bin/VideoComposer.PluginHost.exe",
-  "engines": { "filer": ">=0.5.0" },
+  "platforms": { "win32": { "command": "./bin/VideoComposer.PluginHost.exe" } },
+  "engines": { "filer": ">=0.21.0" },
   "bundled": false,
   "capabilities": ["compose-video"],
   "permissions": {
